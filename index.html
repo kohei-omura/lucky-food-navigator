@@ -5,6 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🍽️ Lucky Food Navigator</title>
     <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700;900&family=M+PLUS+Rounded+1c:wght@400;700;900&display=swap" rel="stylesheet">
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#FF6B6B">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Lucky Food">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
     <style>
         :root {
             --primary: #FF6B6B;
@@ -889,69 +899,93 @@ function getDayKan(now) {
 }
 
 // 六曜（2026年正確データ）
-function getRokuyo(now) {
-    const m = now.getMonth()+1, d = now.getDate();
-    // 2026年の正確な六曜データ（月-日: 六曜）
-    const rokuyo2026 = {
-        '1-1':'大安','1-2':'赤口','1-3':'先勝','1-4':'友引','1-5':'先負','1-6':'仏滅','1-7':'大安','1-8':'赤口','1-9':'先勝','1-10':'友引',
-        '1-11':'先負','1-12':'仏滅','1-13':'大安','1-14':'赤口','1-15':'先勝','1-16':'友引','1-17':'先負','1-18':'仏滅','1-19':'赤口','1-20':'先勝',
-        '1-21':'友引','1-22':'先負','1-23':'仏滅','1-24':'大安','1-25':'赤口','1-26':'先勝','1-27':'友引','1-28':'先負','1-29':'仏滅','1-30':'大安','1-31':'赤口',
-        '2-1':'先勝','2-2':'友引','2-3':'先負','2-4':'仏滅','2-5':'大安','2-6':'赤口','2-7':'先勝','2-8':'友引','2-9':'先負','2-10':'仏滅',
-        '2-11':'大安','2-12':'赤口','2-13':'先勝','2-14':'友引','2-15':'先負','2-16':'仏滅','2-17':'大安','2-18':'赤口','2-19':'先負','2-20':'仏滅',
-        '2-21':'大安','2-22':'赤口','2-23':'先勝','2-24':'友引','2-25':'先負','2-26':'仏滅','2-27':'大安','2-28':'赤口',
-        '3-1':'先勝','3-2':'友引','3-3':'先負','3-4':'仏滅','3-5':'大安','3-6':'赤口','3-7':'先勝','3-8':'友引','3-9':'先負','3-10':'仏滅',
-        '3-11':'大安','3-12':'赤口','3-13':'先勝','3-14':'友引','3-15':'先負','3-16':'仏滅','3-17':'大安','3-18':'赤口','3-19':'先勝','3-20':'友引',
-        '3-21':'先負','3-22':'仏滅','3-23':'大安','3-24':'赤口','3-25':'先勝','3-26':'友引','3-27':'先負','3-28':'仏滅','3-29':'大安','3-30':'赤口','3-31':'先勝',
-        '4-1':'友引','4-2':'先負','4-3':'仏滅','4-4':'大安','4-5':'赤口','4-6':'先勝','4-7':'友引','4-8':'先負','4-9':'仏滅','4-10':'大安',
-        '4-11':'赤口','4-12':'先勝','4-13':'友引','4-14':'先負','4-15':'仏滅','4-16':'大安','4-17':'赤口','4-18':'先勝','4-19':'友引','4-20':'先負',
-        '4-21':'仏滅','4-22':'大安','4-23':'赤口','4-24':'先勝','4-25':'友引','4-26':'先負','4-27':'仏滅','4-28':'大安','4-29':'赤口','4-30':'先負',
-        '5-1':'仏滅','5-2':'大安','5-3':'赤口','5-4':'先勝','5-5':'友引','5-6':'先負','5-7':'仏滅','5-8':'大安','5-9':'赤口','5-10':'先勝',
-        '5-11':'友引','5-12':'先負','5-13':'仏滅','5-14':'大安','5-15':'赤口','5-16':'先勝','5-17':'友引','5-18':'先負','5-19':'仏滅','5-20':'大安',
-        '5-21':'赤口','5-22':'先勝','5-23':'友引','5-24':'先負','5-25':'仏滅','5-26':'大安','5-27':'赤口','5-28':'先勝','5-29':'友引','5-30':'先負','5-31':'仏滅',
-        '6-1':'大安','6-2':'赤口','6-3':'先勝','6-4':'友引','6-5':'先負','6-6':'仏滅','6-7':'大安','6-8':'赤口','6-9':'先勝','6-10':'友引',
-        '6-11':'先負','6-12':'仏滅','6-13':'大安','6-14':'赤口','6-15':'先勝','6-16':'友引','6-17':'先負','6-18':'仏滅','6-19':'大安','6-20':'赤口',
-        '6-21':'先勝','6-22':'友引','6-23':'先負','6-24':'仏滅','6-25':'大安','6-26':'赤口','6-27':'先勝','6-28':'友引','6-29':'先負','6-30':'仏滅',
-        '7-1':'赤口','7-2':'先勝','7-3':'友引','7-4':'先負','7-5':'仏滅','7-6':'大安','7-7':'赤口','7-8':'先勝','7-9':'友引','7-10':'先負',
-        '7-11':'仏滅','7-12':'大安','7-13':'赤口','7-14':'先勝','7-15':'友引','7-16':'先負','7-17':'仏滅','7-18':'大安','7-19':'赤口','7-20':'先勝',
-        '7-21':'友引','7-22':'先負','7-23':'仏滅','7-24':'大安','7-25':'赤口','7-26':'先勝','7-27':'友引','7-28':'先負','7-29':'仏滅','7-30':'大安','7-31':'赤口',
-        '8-1':'先勝','8-2':'友引','8-3':'先負','8-4':'仏滅','8-5':'大安','8-6':'赤口','8-7':'先勝','8-8':'友引','8-9':'先負','8-10':'仏滅',
-        '8-11':'大安','8-12':'赤口','8-13':'先勝','8-14':'友引','8-15':'先負','8-16':'仏滅','8-17':'大安','8-18':'赤口','8-19':'先勝','8-20':'友引',
-        '8-21':'先負','8-22':'仏滅','8-23':'大安','8-24':'赤口','8-25':'先勝','8-26':'友引','8-27':'先負','8-28':'仏滅','8-29':'大安','8-30':'赤口','8-31':'先勝',
-        '9-1':'友引','9-2':'先負','9-3':'仏滅','9-4':'大安','9-5':'赤口','9-6':'先勝','9-7':'友引','9-8':'先負','9-9':'仏滅','9-10':'大安',
-        '9-11':'赤口','9-12':'先勝','9-13':'友引','9-14':'先負','9-15':'仏滅','9-16':'大安','9-17':'赤口','9-18':'先勝','9-19':'友引','9-20':'先負',
-        '9-21':'仏滅','9-22':'大安','9-23':'赤口','9-24':'先勝','9-25':'友引','9-26':'先負','9-27':'仏滅','9-28':'大安','9-29':'赤口','9-30':'先負',
-        '10-1':'仏滅','10-2':'大安','10-3':'赤口','10-4':'先勝','10-5':'友引','10-6':'先負','10-7':'仏滅','10-8':'大安','10-9':'赤口','10-10':'先勝',
-        '10-11':'友引','10-12':'先負','10-13':'仏滅','10-14':'大安','10-15':'赤口','10-16':'先勝','10-17':'友引','10-18':'先負','10-19':'仏滅','10-20':'大安',
-        '10-21':'赤口','10-22':'先勝','10-23':'友引','10-24':'先負','10-25':'仏滅','10-26':'大安','10-27':'赤口','10-28':'先勝','10-29':'友引','10-30':'先負','10-31':'仏滅',
-        '11-1':'赤口','11-2':'先勝','11-3':'友引','11-4':'先負','11-5':'仏滅','11-6':'大安','11-7':'赤口','11-8':'先勝','11-9':'友引','11-10':'先負',
-        '11-11':'仏滅','11-12':'大安','11-13':'赤口','11-14':'先勝','11-15':'友引','11-16':'先負','11-17':'仏滅','11-18':'大安','11-19':'赤口','11-20':'先勝',
-        '11-21':'友引','11-22':'先負','11-23':'仏滅','11-24':'大安','11-25':'赤口','11-26':'先勝','11-27':'友引','11-28':'先負','11-29':'仏滅','11-30':'大安',
-        '12-1':'先勝','12-2':'友引','12-3':'先負','12-4':'仏滅','12-5':'大安','12-6':'赤口','12-7':'先勝','12-8':'友引','12-9':'先負','12-10':'仏滅',
-        '12-11':'大安','12-12':'赤口','12-13':'先勝','12-14':'友引','12-15':'先負','12-16':'仏滅','12-17':'大安','12-18':'赤口','12-19':'先勝','12-20':'友引',
-        '12-21':'先負','12-22':'仏滅','12-23':'大安','12-24':'赤口','12-25':'先勝','12-26':'友引','12-27':'先負','12-28':'仏滅','12-29':'大安','12-30':'赤口','12-31':'先勝'
-    };
-    const key = `${m}-${d}`;
-    return rokuyo2026[key] || '大安';
+// ===== 天文計算エンジン（旧暦・六曜・月相）StarWalk/AJNET基準・閏月対応・全年対応 =====
+// 朔(新月)と視太陽黄経から旧暦を算出し、(旧暦月+旧暦日)%6 で六曜を求める。2026実データ検証済み。
+function _toJD(d){ return d.getTime()/86400000 + 2440587.5; }
+function _newMoonTD(k){
+  const T=k/1236.85, rad=Math.PI/180;
+  let jde=2451550.09766 + 29.530588861*k + 0.00015437*T*T - 0.000000150*T*T*T + 0.00000000073*T*T*T*T;
+  const M =(2.5534 + 29.10535670*k - 0.0000014*T*T - 0.00000011*T*T*T)*rad;
+  const Mp=(201.5643 + 385.81693528*k + 0.0107582*T*T + 0.00001238*T*T*T)*rad;
+  const F =(160.7108 + 390.67050284*k - 0.0016118*T*T - 0.00000227*T*T*T)*rad;
+  const O =(124.7746 - 1.56375588*k + 0.0020672*T*T + 0.00000215*T*T*T)*rad;
+  const E =1 - 0.002516*T - 0.0000074*T*T;
+  let c=0;
+  c+=-0.40720*Math.sin(Mp); c+=0.17241*E*Math.sin(M); c+=0.01608*Math.sin(2*Mp);
+  c+=0.01039*Math.sin(2*F); c+=0.00739*E*Math.sin(Mp-M); c+=-0.00514*E*Math.sin(Mp+M);
+  c+=0.00208*E*E*Math.sin(2*M); c+=-0.00111*Math.sin(Mp-2*F); c+=-0.00057*Math.sin(Mp+2*F);
+  c+=0.00056*E*Math.sin(2*Mp+M); c+=-0.00042*Math.sin(3*Mp); c+=0.00042*E*Math.sin(M+2*F);
+  c+=0.00038*E*Math.sin(M-2*F); c+=-0.00024*E*Math.sin(2*Mp-M); c+=-0.00017*Math.sin(O);
+  return jde+c;
+}
+function _deltaT(jd){ const t=(2000+(jd-2451545)/365.25)-2000; return (62.92+0.32217*t+0.005589*t*t)/86400; }
+function _sunLong(jd){
+  const T=(jd-2451545)/36525, rad=Math.PI/180;
+  let L0=280.46646+36000.76983*T+0.0003032*T*T;
+  let M=357.52911+35999.05029*T-0.0001537*T*T;
+  const Mr=M*rad;
+  let C=(1.914602-0.004817*T-0.000014*T*T)*Math.sin(Mr)+(0.019993-0.000101*T)*Math.sin(2*Mr)+0.000289*Math.sin(3*Mr);
+  let theta=L0+C; const Om=(125.04-1934.136*T)*rad;
+  theta += -0.00569 - 0.00478*Math.sin(Om);
+  return ((theta%360)+360)%360;
+}
+function _newMoonJST(k){ const td=_newMoonTD(k); return td-_deltaT(td)+9/24; }
+function _solarTermUT(approx,angle){ let jd=approx; for(let i=0;i<8;i++){ const lon=_sunLong(jd); let d=((angle-lon+540)%360)-180; jd+=d*(365.2422/360);} return jd-_deltaT(jd); }
+function _civilDay(j){ return Math.floor(j+0.5); }
+function _monthStartK(jstjd){ const cd=_civilDay(jstjd); let k=Math.round((jstjd-9/24-2451550.09766)/29.530588861); while(_civilDay(_newMoonJST(k))>cd)k--; while(_civilDay(_newMoonJST(k+1))<=cd)k++; return k; }
+function _jdToGY(jstjd){ return new Date((jstjd-9/24-2440587.5)*86400000).getUTCFullYear(); }
+function _wsJST(gy){ return _solarTermUT(2451545+365.2422*(gy-2000)+355,270)+9/24; }
+function _hasZhongqi(k){
+  const a=_newMoonJST(k), b=_newMoonJST(k+1);
+  const la=_sunLong(a-9/24);
+  const nextDeg=(Math.floor(la/30)+1)*30, target=((nextDeg%360)+360)%360;
+  const approx=(a-9/24)+(((nextDeg-la)%360+360)%360)*(365.2422/360);
+  const termJST=_solarTermUT(approx,target)+9/24;
+  return termJST>=a && termJST<b;
+}
+const _lunarCache={};
+function _lunarMD(date){
+  const key=date.getFullYear()+'-'+(date.getMonth()+1)+'-'+date.getDate();
+  if(_lunarCache[key]) return _lunarCache[key];
+  const jstjd=_toJD(date)+9/24, cd=_civilDay(jstjd);
+  const kCur=_monthStartK(jstjd);
+  const day=cd-_civilDay(_newMoonJST(kCur))+1;
+  const gy=_jdToGY(_newMoonJST(kCur));
+  let ws=_wsJST(gy), k11=_monthStartK(ws);
+  if(_civilDay(_newMoonJST(k11))>_civilDay(_newMoonJST(kCur))){ ws=_wsJST(gy-1); k11=_monthStartK(ws); }
+  let curNum=11, curLeap=false, k=k11;
+  while(k<kCur){ if(_hasZhongqi(k+1)){ curNum=curNum%12+1; curLeap=false; } else curLeap=true; k++; }
+  return _lunarCache[key]={ month:curNum, day, leap:curLeap };
+}
+function getLunarDate(now){ return _lunarMD(now); }
+const _ROKUYO=['大安','赤口','先勝','友引','先負','仏滅'], _rokuyoCache={}, _moonCache={};
+function getRokuyo(now){
+  const key=now.getFullYear()+'-'+(now.getMonth()+1)+'-'+now.getDate();
+  if(_rokuyoCache[key]) return _rokuyoCache[key];
+  const lm=_lunarMD(now);
+  return _rokuyoCache[key]=_ROKUYO[((lm.month+lm.day)%6+6)%6];
 }
 
-// 月相計算
-// 月相計算: JDエポック基準法 StarWalk宮崎市実測検証済み
-// EPOCH 2451549.759 (+0.5日補正) → 3/3=14.4日(満月) 3/4=14.9日(更待月) ✅
-function getMoonPhase(now) {
-    const EPOCH_JD = 2451549.759, SYNODIC = 29.530589;
-    const ms  = (now instanceof Date) ? now.getTime() : now;
-    const jd  = ms / 86400000 + 2440587.5;
-    const frac = (((jd - EPOCH_JD) / SYNODIC) % 1 + 1) % 1;
-    const age  = Math.round(frac * SYNODIC * 10) / 10;
-    // StarWalk 8フェーズ準拠
-    if (age <= 1.0 || age >= 28.5) return { phase:'新月',     emoji:'🌑', bonus:6, age };
-    if (age <= 6.5)                return { phase:'三日月',   emoji:'🌒', bonus:4, age };
-    if (age <= 8.5)                return { phase:'上弦の月', emoji:'🌓', bonus:5, age };
-    if (age <= 13.8)               return { phase:'十三夜',   emoji:'🌔', bonus:6, age };
-    if (age <= 14.8)               return { phase:'満月',     emoji:'🌕', bonus:8, age };
-    if (age <= 22.0)               return { phase:'更待月',   emoji:'🌖', bonus:5, age };
-    if (age <= 25.0)               return { phase:'下弦の月', emoji:'🌗', bonus:4, age };
-    return                                { phase:'有明月',   emoji:'🌘', bonus:3, age };
+// 月相計算: 天文計算による月齢 + StarWalk 8フェーズ準拠（呼称: 十三夜の月）
+function getMoonPhase(now){
+    const key=now.getFullYear()+'-'+(now.getMonth()+1)+'-'+now.getDate();
+    if(_moonCache[key]) return _moonCache[key];
+    const jstjd=_toJD(now)+9/24;
+    let k=Math.round((jstjd-9/24-2451550.09766)/29.530588861)+1;
+    while(_newMoonJST(k)>jstjd) k--;
+    let age=Math.round((jstjd-_newMoonJST(k))*10)/10;
+    if(age<0)age=0; if(age>=29.53)age-=29.53;
+    let o;
+    if(age<=1.1||age>=28.4) o={phase:'新月',emoji:'🌑',bonus:6};
+    else if(age<=6.6)  o={phase:'三日月',emoji:'🌒',bonus:4};
+    else if(age<=7.6)  o={phase:'上弦の月',emoji:'🌓',bonus:5};
+    else if(age<=13.8) o={phase:'十三夜の月',emoji:'🌔',bonus:6};
+    else if(age<=15.8) o={phase:'満月',emoji:'🌕',bonus:8};
+    else if(age<=21.3) o={phase:'更待月',emoji:'🌖',bonus:5};
+    else if(age<=23.3) o={phase:'下弦の月',emoji:'🌗',bonus:4};
+    else o={phase:'有明月',emoji:'🌘',bonus:3};
+    o.age=age; o.name=o.phase;
+    return _moonCache[key]=o;
 }
 
 // エレメント相性
@@ -1038,7 +1072,7 @@ function calculateRestaurantScores(now) {
 
     // ── 共通占術スコア（0〜40点・全店共通）──
     const rokuyoPt = {'大安':8,'友引':6,'先勝':5,'先負':3,'赤口':1,'仏滅':0}[rokuyo]||4;
-    const moonPt = {'満月':8,'新月':7,'十三夜':6,'上弦の月':5,'更待月':5,'三日月':4,'下弦の月':3,'有明月':2}[moonPhase.name]||4;
+    const moonPt = {'満月':8,'新月':7,'十三夜の月':6,'上弦の月':5,'更待月':5,'三日月':4,'下弦の月':3,'有明月':2}[moonPhase.phase]||4;
     const kyuseiPt = Math.round(Math.max(0, Math.min(8, (kds.total + 6) / 2)));
     const fortunePt = Math.min(16, getAdditionalFortuneBonusFull(now));
     const commonScore = rokuyoPt + moonPt + kyuseiPt + fortunePt; // 0〜40
@@ -1143,7 +1177,7 @@ function generateReason(shop, rank, now) {
         '更待月':'更待月の余韻が運気を持続',
         '三日月':'三日月の希望エネルギー',
         '上弦の月':'上弦月の行動力が高まる',
-        '十三夜':'十三夜の期待感が高まる',
+        '十三夜の月':'十三夜の期待感が高まる',
         '下弦の月':'下弦月の手放しと整理',
         '有明月':'有明月の内省と準備',
     };
@@ -1177,10 +1211,12 @@ function updateTime() {
     // pills更新
     const moonPhase = getMoonPhase(now);
     const rokuyo    = getRokuyo(now);
+    const lunar     = getLunarDate(now);
     const dayKan    = getDayKan(now);
     const kyusei    = getKyusei(userData.birthdate.split('-')[0]);
     const pills = [
         { label: `六曜:${rokuyo}` },
+        { label: `旧暦:${lunar.leap?'閏':''}${lunar.month}/${lunar.day}` },
         { label: `${moonPhase.emoji||'🌙'}${moonPhase.phase}` },
         { label: `日干:${dayKan}` },
         { label: '⭐本命:' + BIRTH_KYUSEI.slice(0,2) },
@@ -1211,6 +1247,7 @@ function startFortune() {
         // ── サマリーヘッダー ──
         const rokuyo = getRokuyo(now);
         const moonPhase = getMoonPhase(now);
+        const lunar = getLunarDate(now);
         const top1 = openShops[0] || ranked[0];
         const medals = ['🥇','🥈','🥉'];
         
@@ -1218,7 +1255,7 @@ function startFortune() {
         <div class="summary">
             <div class="summary-title">✨ 本日の総合運</div>
             <div class="summary-text">
-                ${rokuyo}の${moonPhase.emoji||'🌙'}${moonPhase.phase}（月齢${moonPhase.age}日）。<br>
+                ${rokuyo}の${moonPhase.emoji||'🌙'}${moonPhase.phase}（旧暦${lunar.leap?'閏':''}${lunar.month}月${lunar.day}日・月齢${moonPhase.age}日）。<br>
                 ${userData.zodiac}・B型・酉年の晃平さんは今日、<br>
                 <strong style="font-size:1.1em;">${top1.name}</strong>との運気相性が最高です！
             </div>
@@ -1385,5 +1422,12 @@ function closeMap(){ document.getElementById('mapModal').classList.remove('show'
   </div>
 </div>
 
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function () {
+          navigator.serviceWorker.register('sw.js').catch(function (e) { console.warn('SW登録失敗', e); });
+        });
+      }
+    </script>
 </body>
 </html>

@@ -525,66 +525,52 @@
 <script>
 // ========== イオンモール宮崎 全飲食店データ ==========
 const restaurants = [
-    // ──────────────────────────────────────────────
-    // 1F レストラン街（11:00〜22:00）
-    // ──────────────────────────────────────────────
-    { name:'コメダ珈琲店 イオンモール宮崎店',              floor:'1F', area:'レストラン街', genre:'カフェ',         element:'風', hours:{open:11,close:22}, emoji:'☕', tags:['モーニング','シロノワール','カフェ','軽食'] },
-    { name:'北海道キッチン YOSHIMI',                      floor:'1F', area:'レストラン街', genre:'レストラン',      element:'土', hours:{open:11,close:22}, emoji:'🍴', tags:['ローストビーフ丼','北海道グルメ','ランチ','ステーキ'] },
-    { name:'築地食堂源ちゃん',                            floor:'1F', area:'レストラン街', genre:'和食・海鮮',      element:'水', hours:{open:11,close:22}, emoji:'🐟', tags:['海鮮丼','鯛ごま丼','だし茶漬け','和食'] },
-    { name:'いきなりステーキ',                            floor:'1F', area:'レストラン街', genre:'ステーキ',        element:'火', hours:{open:11,close:22}, emoji:'🥩', tags:['ステーキ','肉','ランチ','ドリンクバー'] },
-    { name:'山本のハンバーグ',                            floor:'1F', area:'レストラン街', genre:'ハンバーグ',      element:'土', hours:{open:11,close:22}, emoji:'🍔', tags:['ハンバーグ','デミグラス','洋食','ランチ'] },
-    { name:'カフェ イタリアン・トマト',                   floor:'1F', area:'レストラン街', genre:'カフェ・洋食',    element:'風', hours:{open:11,close:22}, emoji:'🍝', tags:['パスタ','洋食','カフェ','ランチセット'] },
-    { name:'元祖 辛麺屋桝元',                             floor:'1F', area:'レストラン街', genre:'ラーメン',        element:'火', hours:{open:11,close:22}, emoji:'🌶️', tags:['辛麺','宮崎','辛い','ラーメン'] },
-    { name:'五穀',                                        floor:'1F', area:'レストラン街', genre:'和食',            element:'木', hours:{open:11,close:22}, emoji:'🍚', tags:['和食','定食','ご飯','バランス'] },
-    { name:'シアトルズベストコーヒー',                    floor:'1F', area:'レストラン街', genre:'カフェダイニング', element:'風', hours:{open:11,close:22}, emoji:'☕', tags:['カフェ','ダイニング','コーヒー','軽食'] },
-    { name:'寿しまどか',                                  floor:'1F', area:'レストラン街', genre:'回転寿司',        element:'水', hours:{open:11,close:22}, emoji:'🍣', tags:['寿司','海鮮','回転寿司','ランチ'] },
-    { name:'とんかつ 濱かつ',                             floor:'1F', area:'レストラン街', genre:'とんかつ',        element:'土', hours:{open:11,close:22}, emoji:'🍱', tags:['とんかつ','ヒレカツ','ロースカツ','定食'] },
-    { name:'しゃぶしゃぶ 美山',                           floor:'1F', area:'レストラン街', genre:'しゃぶしゃぶ',    element:'水', hours:{open:11,close:22}, emoji:'🍲', tags:['しゃぶしゃぶ','鍋','和食','ランチ'] },
-    { name:'和食・洋食レストラン くいしんぼう',           floor:'1F', area:'レストラン街', genre:'和食・洋食',      element:'土', hours:{open:11,close:22}, emoji:'🍽️', tags:['和食','洋食','定食','ランチ'] },
-    { name:'スターバックスコーヒー イオンモール宮崎 South Mall 1階店', floor:'1F', area:'レストラン街', genre:'カフェ', element:'風', hours:{open:11,close:22}, emoji:'☕', tags:['スタバ','カフェ','フラペチーノ','ラテ'] },
-
-    // ──────────────────────────────────────────────
-    // 2F Food Forest（10:00〜21:00）
-    // ──────────────────────────────────────────────
-    { name:'Dipper Dan CREPE',                            floor:'2F', area:'Food Forest', genre:'クレープ',         element:'水', hours:{open:10,close:21}, emoji:'🥞', tags:['クレープ','タピオカ','スイーツ','テイクアウト'] },
-    { name:'丸亀製麺',                                    floor:'2F', area:'Food Forest', genre:'うどん',            element:'水', hours:{open:10,close:21}, emoji:'🍜', tags:['讃岐うどん','天ぷら','いなり','セルフ'] },
-    { name:'てんぷら一代',                                floor:'2F', area:'Food Forest', genre:'天ぷら',            element:'火', hours:{open:10,close:21}, emoji:'🍤', tags:['天ぷら','揚げたて','定食','宮崎県初出店'] },
-    { name:'ラーメン 魁力屋',                             floor:'2F', area:'Food Forest', genre:'ラーメン',          element:'火', hours:{open:10,close:21}, emoji:'🍜', tags:['京都背脂醤油ラーメン','焼飯','にんにく'] },
-    { name:'もくてきち',                                  floor:'2F', area:'Food Forest', genre:'ラーメン',          element:'火', hours:{open:10,close:21}, emoji:'🍜', tags:['豚骨ラーメン','生卵','宮崎','あっさり'] },
-    { name:'からあげの店 唐十',                           floor:'2F', area:'Food Forest', genre:'からあげ',          element:'火', hours:{open:10,close:21}, emoji:'🍗', tags:['からあげ','チキン定食','揚げ物','テイクアウト'] },
-    { name:'ぼっけもん',                                  floor:'2F', area:'Food Forest', genre:'餃子・鶏料理',      element:'火', hours:{open:10,close:21}, emoji:'🥟', tags:['餃子串','チキン定食','宮崎','テイクアウト'] },
-    { name:'くだものかふぇ',                              floor:'2F', area:'Food Forest', genre:'フルーツ・ドリンク', element:'水', hours:{open:10,close:21}, emoji:'🍓', tags:['スムージー','フルーツ','あまおう','ソフトクリーム'] },
-    { name:'ケンタッキーフライドチキン',                  floor:'2F', area:'Food Forest', genre:'フライドチキン',    element:'火', hours:{open:10,close:21}, emoji:'🍗', tags:['チキン','フライドチキン','ファストフード'] },
-    { name:'SUBWAY',                                      floor:'2F', area:'Food Forest', genre:'サンドイッチ',      element:'風', hours:{open:10,close:21}, emoji:'🥖', tags:['サンドイッチ','ヘルシー','軽食','カスタム'] },
-    { name:'築地銀だこ',                                floor:'2F', area:'Food Forest', genre:'たこ焼き',          element:'火', hours:{open:10,close:21}, emoji:'🐙', tags:['たこ焼き','餃子','宮崎','テイクアウト'] },
-    { name:'インド料理 ビスヌ',                         floor:'2F', area:'Food Forest', genre:'インド料理',        element:'火', hours:{open:10,close:21}, emoji:'🍛', tags:['インドカレー','ナン','スパイス','レストラン'] },
-    { name:'ビビン亭 イオンモール宮崎店',                 floor:'2F', area:'Food Forest', genre:'韓国料理',          element:'火', hours:{open:10,close:21}, emoji:'🥘', tags:['石窯ビビンバ','丼もの','韓国','ランチ'] },
-    { name:'紅虎餃子房',                                  floor:'2F', area:'Food Forest', genre:'中華料理',          element:'火', hours:{open:10,close:21}, emoji:'🥢', tags:['餃子','中華家庭料理','中華','宮崎'] },
-    { name:'ペッパーランチ',                              floor:'2F', area:'Food Forest', genre:'ステーキ・鉄板',    element:'火', hours:{open:10,close:21}, emoji:'🥩', tags:['ペッパーライス','ステーキ','鉄板','ランチ'] },
-    { name:'ポポラマーマ',                                floor:'2F', area:'Food Forest', genre:'パスタ',            element:'風', hours:{open:10,close:21}, emoji:'🍝', tags:['生パスタ','イタリアン','できたて','ランチ'] },
-    { name:'マクドナルド',                                floor:'2F', area:'Food Forest', genre:'ファストフード',    element:'火', hours:{open:10,close:21}, emoji:'🍔', tags:['ハンバーガー','ポテト','ファストフード'] },
-    { name:'ミスタードーナツ',                            floor:'2F', area:'Food Forest', genre:'ドーナツ',          element:'風', hours:{open:10,close:21}, emoji:'🍩', tags:['ドーナツ','コーヒー','スイーツ','軽食'] },
-    { name:'ミニヨン',                                    floor:'2F', area:'Food Forest', genre:'パン・クロワッサン', element:'風', hours:{open:10,close:21}, emoji:'🥐', tags:['クロワッサン','パン','ベーカリー','テイクアウト'] },
-    { name:'レモネードbyレモニカ イオンモール宮崎店',     floor:'2F', area:'Food Forest', genre:'レモネード',        element:'水', hours:{open:10,close:21}, emoji:'🍋', tags:['レモネード','ドリンク','スイーツ','映え'] },
-    { name:'スターバックスコーヒー イオンモール宮崎 North Mall 2階店', floor:'2F', area:'Food Forest', genre:'カフェ', element:'風', hours:{open:10,close:21}, emoji:'☕', tags:['スタバ','カフェ','フラペチーノ','ラテ'] },
-    { name:'タリーズコーヒー',                            floor:'2F', area:'Food Forest', genre:'カフェ',            element:'風', hours:{open:10,close:21}, emoji:'☕', tags:['タリーズ','カフェ','コーヒー','軽食'] },
-    { name:'だがし夢や',                                  floor:'2F', area:'Food Forest', genre:'駄菓子',            element:'木', hours:{open:10,close:21}, emoji:'🍬', tags:['駄菓子','懐かし','スイーツ','子供'] },
-
-    // ──────────────────────────────────────────────
-    // 食料品・物販（10:00〜21:00）
-    // ──────────────────────────────────────────────
-    { name:'りんごとバター。苺のワルツ',                  floor:'1F', area:'専門店', genre:'ベーカリー',        element:'木', hours:{open:10,close:21}, emoji:'🍎', tags:['りんごパン','ベーカリー','スイーツ','テイクアウト'] },
-    { name:'インパクトワンプラス',                        floor:'1F', area:'専門店', genre:'生鮮食品',          element:'木', hours:{open:10,close:21}, emoji:'🥦', tags:['生鮮品','食品','野菜','新鮮'] },
-    { name:'カルディコーヒーファーム',                    floor:'1F', area:'専門店', genre:'輸入食品',          element:'風', hours:{open:10,close:21}, emoji:'🌍', tags:['輸入食品','コーヒー','世界のグルメ','おみやげ'] },
-    { name:'久世福商店',                                  floor:'1F', area:'専門店', genre:'総合食品',          element:'土', hours:{open:10,close:21}, emoji:'🍱', tags:['乾物','食品','だし','和食材'] },
-    { name:'ゴディバ',                                    floor:'1F', area:'専門店', genre:'チョコレート',      element:'金', hours:{open:10,close:21}, emoji:'🍫', tags:['チョコレート','高級','スイーツ','ギフト'] },
-    { name:'ゴンチャ',                                    floor:'1F', area:'専門店', genre:'タピオカ・ティー',  element:'水', hours:{open:10,close:21}, emoji:'🧋', tags:['タピオカ','アジアンティー','ドリンク','映え'] },
-    { name:'サーティワンアイスクリーム',                  floor:'1F', area:'専門店', genre:'アイスクリーム',    element:'水', hours:{open:10,close:21}, emoji:'🍦', tags:['アイス','フレーバー','スイーツ','ダブル'] },
-    { name:'杉養蜂園',                                    floor:'1F', area:'専門店', genre:'はちみつ',          element:'木', hours:{open:10,close:21}, emoji:'🍯', tags:['はちみつ','健康','ギフト','天然'] },
-    { name:'十勝あんこのサザエ',                          floor:'1F', area:'専門店', genre:'和菓子',            element:'土', hours:{open:10,close:21}, emoji:'🍡', tags:['和菓子','あんこ','十勝','スイーツ'] },
-    { name:'乃が美 はなれ',                               floor:'1F', area:'専門店', genre:'食パン',            element:'木', hours:{open:10,close:21}, emoji:'🍞', tags:['高級食パン','ふわふわ','ベーカリー','テイクアウト'] },
-    { name:'LUPICIA',                                     floor:'2F', area:'専門店', genre:'紅茶・お茶',        element:'木', hours:{open:10,close:21}, emoji:'🫖', tags:['紅茶','日本茶','烏龍茶','ギフト'] },
-    { name:'ワインショップニコラ',                        floor:'2F', area:'専門店', genre:'ワイン',            element:'金', hours:{open:10,close:21}, emoji:'🍷', tags:['ワイン','洋酒','ギフト','ソムリエ'] },
+    // ── 1F サウスモール ──
+    { name:'スターバックスコーヒー イオンモール宮崎 South Mall 1階店', floor:'1F', area:'サウスモール', genre:'カフェ', element:'風', hours:{open:10,close:21}, emoji:'☕', tags:['スタバ','カフェ','フラペチーノ','ラテ'] },
+    // ── 1F ノースモール ──
+    { name:'レモネード by レモニカ', floor:'1F', area:'ノースモール', genre:'レモネード', element:'水', hours:{open:10,close:21}, emoji:'🍋', tags:['レモネード','ドリンク','スイーツ','映え'] },
+    // ── 1F サウスモール ──
+    { name:'ゴディバ', floor:'1F', area:'サウスモール', genre:'チョコレート', element:'金', hours:{open:10,close:21}, emoji:'🍫', tags:['チョコレート','高級','スイーツ','ギフト'] },
+    // ── 1F ノースモール ──
+    { name:'カフェ イタリアン・トマト', floor:'1F', area:'ノースモール', genre:'カフェ・洋食', element:'風', hours:{open:10,close:21}, emoji:'🍝', tags:['パスタ','洋食','カフェ','ランチセット'] },
+    { name:'くだものかふぇ', floor:'1F', area:'ノースモール', genre:'フルーツ・ドリンク', element:'水', hours:{open:10,close:21}, emoji:'🍓', tags:['スムージー','フルーツ','あまおう','ソフトクリーム'] },
+    // ── 1F レストラン街 ──
+    { name:'コメダ珈琲店', floor:'1F', area:'レストラン街', genre:'カフェ', element:'風', hours:{open:10,close:22}, emoji:'☕', tags:['モーニング','シロノワール','カフェ','軽食'] },
+    { name:'天ぷら一代', floor:'1F', area:'レストラン街', genre:'天ぷら', element:'火', hours:{open:11,close:22}, emoji:'🍤', tags:['天ぷら','揚げたて','定食','宮崎県初出店'] },
+    { name:'ポポラマーマ', floor:'1F', area:'レストラン街', genre:'パスタ', element:'風', hours:{open:11,close:22}, emoji:'🍝', tags:['生パスタ','イタリアン','できたて','ランチ'] },
+    { name:'紅虎餃子房', floor:'1F', area:'レストラン街', genre:'中華料理', element:'火', hours:{open:11,close:22}, emoji:'🥢', tags:['餃子','中華家庭料理','中華','宮崎'] },
+    { name:'築地食堂源ちゃん 銀座惣菜店', floor:'1F', area:'レストラン街', genre:'和食・海鮮', element:'水', hours:{open:10,close:21}, emoji:'🐟', tags:['海鮮丼','鯛ごま丼','だし茶漬け','和食'] },
+    { name:'タリーズコーヒー', floor:'1F', area:'レストラン街', genre:'カフェ', element:'風', hours:{open:10,close:21}, emoji:'☕', tags:['タリーズ','カフェ','コーヒー','軽食'] },
+    { name:'ゴンチャ', floor:'1F', area:'レストラン街', genre:'タピオカ・ティー', element:'水', hours:{open:10,close:21}, emoji:'🧋', tags:['タピオカ','アジアンティー','ドリンク','映え'] },
+    { name:'乃が美 はなれ', floor:'1F', area:'レストラン街', genre:'食パン', element:'木', hours:{open:10,close:21}, emoji:'🍞', tags:['高級食パン','ふわふわ','ベーカリー','テイクアウト'] },
+    { name:'いきなりステーキ', floor:'1F', area:'レストラン街', genre:'ステーキ', element:'火', hours:{open:11,close:22}, emoji:'🥩', tags:['ステーキ','肉','ランチ','ドリンクバー'] },
+    { name:'寿しまどか', floor:'1F', area:'レストラン街', genre:'回転寿司', element:'水', hours:{open:11,close:22}, emoji:'🍣', tags:['寿司','海鮮','回転寿司','ランチ'] },
+    { name:'しゃぶしゃぶ 美山', floor:'1F', area:'レストラン街', genre:'しゃぶしゃぶ', element:'水', hours:{open:11,close:22}, emoji:'🍲', tags:['しゃぶしゃぶ','鍋','和食','ランチ'] },
+    { name:'くいしんぼう', floor:'1F', area:'レストラン街', genre:'和食・洋食', element:'土', hours:{open:11,close:22}, emoji:'🍽️', tags:['和食','洋食','定食','ランチ'] },
+    { name:'山本のハンバーグ', floor:'1F', area:'レストラン街', genre:'ハンバーグ', element:'土', hours:{open:11,close:22}, emoji:'🍔', tags:['ハンバーグ','デミグラス','洋食','ランチ'] },
+    { name:'ビスヌ', floor:'1F', area:'レストラン街', genre:'インド料理', element:'火', hours:{open:11,close:22}, emoji:'🍛', tags:['インドカレー','ナン','スパイス','レストラン'] },
+    { name:'とんかつ 濱かつ', floor:'1F', area:'レストラン街', genre:'とんかつ', element:'土', hours:{open:11,close:22}, emoji:'🍱', tags:['とんかつ','ヒレカツ','ロースカツ','定食'] },
+    { name:'元祖 辛麺屋桝元', floor:'1F', area:'レストラン街', genre:'ラーメン', element:'火', hours:{open:11,close:22}, emoji:'🌶️', tags:['辛麺','宮崎','辛い','ラーメン'] },
+    { name:'五穀', floor:'1F', area:'レストラン街', genre:'和食', element:'木', hours:{open:11,close:22}, emoji:'🍚', tags:['和食','定食','ご飯','バランス'] },
+    { name:'北海道キッチン YOSHIMI', floor:'1F', area:'レストラン街', genre:'レストラン', element:'土', hours:{open:11,close:22}, emoji:'🍴', tags:['ローストビーフ丼','北海道グルメ','ランチ','ステーキ'] },
+    // ── 2F サウスモール ──
+    { name:'シアトルズベストコーヒー', floor:'2F', area:'サウスモール', genre:'カフェダイニング', element:'風', hours:{open:10,close:21}, emoji:'☕', tags:['カフェ','ダイニング','コーヒー','軽食'] },
+    // ── 2F ノースモール ──
+    { name:'スターバックス コーヒー イオンモール宮崎 North Mall 2階店', floor:'2F', area:'ノースモール', genre:'カフェ', element:'風', hours:{open:10,close:21}, emoji:'☕', tags:['スタバ','カフェ','フラペチーノ','ラテ'] },
+    // ── 2F Food Forest ──
+    { name:'ぼっけもん', floor:'2F', area:'Food Forest', genre:'餃子・鶏料理', element:'火', hours:{open:10,close:21}, emoji:'🥟', tags:['餃子串','チキン定食','宮崎','テイクアウト'] },
+    { name:'丸亀製麺', floor:'2F', area:'Food Forest', genre:'うどん', element:'水', hours:{open:10,close:21}, emoji:'🍜', tags:['讃岐うどん','天ぷら','いなり','セルフ'] },
+    { name:'魁力屋', floor:'2F', area:'Food Forest', genre:'ラーメン', element:'火', hours:{open:10,close:21}, emoji:'🍜', tags:['京都背脂醤油ラーメン','焼飯','にんにく'] },
+    { name:'サーティワンアイスクリーム', floor:'2F', area:'Food Forest', genre:'アイスクリーム', element:'水', hours:{open:10,close:21}, emoji:'🍦', tags:['アイス','フレーバー','スイーツ','ダブル'] },
+    { name:'ペッパーランチ', floor:'2F', area:'Food Forest', genre:'ステーキ・鉄板', element:'火', hours:{open:10,close:21}, emoji:'🥩', tags:['ペッパーライス','ステーキ','鉄板','ランチ'] },
+    { name:'築地銀だこ', floor:'2F', area:'Food Forest', genre:'たこ焼き', element:'火', hours:{open:10,close:21}, emoji:'🐙', tags:['たこ焼き','餃子','宮崎','テイクアウト'] },
+    { name:'ケンタッキーフライドチキン', floor:'2F', area:'Food Forest', genre:'フライドチキン', element:'火', hours:{open:10,close:21}, emoji:'🍗', tags:['チキン','フライドチキン','ファストフード'] },
+    { name:'ミスタードーナツ', floor:'2F', area:'Food Forest', genre:'ドーナツ', element:'風', hours:{open:10,close:21}, emoji:'🍩', tags:['ドーナツ','コーヒー','スイーツ','軽食'] },
+    { name:'Dipper Dan', floor:'2F', area:'Food Forest', genre:'クレープ', element:'水', hours:{open:10,close:21}, emoji:'🥞', tags:['クレープ','タピオカ','スイーツ','テイクアウト'] },
+    { name:'サブウェイ', floor:'2F', area:'Food Forest', genre:'サンドイッチ', element:'風', hours:{open:10,close:21}, emoji:'🥖', tags:['サンドイッチ','ヘルシー','軽食','カスタム'] },
+    { name:'マクドナルド', floor:'2F', area:'Food Forest', genre:'ファストフード', element:'火', hours:{open:10,close:21}, emoji:'🍔', tags:['ハンバーガー','ポテト','ファストフード'] },
+    { name:'ビビン亭', floor:'2F', area:'Food Forest', genre:'韓国料理', element:'火', hours:{open:10,close:21}, emoji:'🥘', tags:['石窯ビビンバ','丼もの','韓国','ランチ'] },
+    { name:'もくてきち', floor:'2F', area:'Food Forest', genre:'ラーメン', element:'火', hours:{open:10,close:21}, emoji:'🍜', tags:['豚骨ラーメン','生卵','宮崎','あっさり'] },
 ];
 
 // ========== ユーザー情報（晃平さん専用） ==========
@@ -601,56 +587,93 @@ const userData = {
 // ========== 風水スコアリング ==========
 // 各店舗の方角（モール内位置から算出）
 // North Mall = 北エリア, South Mall = 南エリア, レストラン街 = 中央, Food Forest = 中央
+// 各店の方位: 職場である C smart 1F[116] (px675,285) を起点に、
+// マップの方位磁針（北=真上・実測0.4°）を基準として座標から算出。
+// 各店の幾何情報: 職場 C smart 1F[116] (px675,285) を原点とする。
+//   dir  = 8方位ラベル（表示・共有用）
+//   ang  = 方位角（北=0°・時計回り。マップの方位磁針で北=真上を実測確認）
+//   dist = C smart からの距離（最遠店を1.0に正規化）
+// 方位スコアは dir の一致判定ではなく ang の角度差で連続評価する。
+const SHOP_GEO = {
+    'スターバックスコーヒー イオンモール宮崎 South Mall 1階店':{dir:'南',ang:167.0,dist:0.961},   // [1023]
+    'レモネード by レモニカ':{dir:'西',ang:267.0,dist:0.812},   // [103-A]
+    'ゴディバ':{dir:'南',ang:161.4,dist:1.0},   // [1031]
+    'カフェ イタリアン・トマト':{dir:'東南',ang:135.9,dist:0.663},   // [137-C]
+    'くだものかふぇ':{dir:'西',ang:259.6,dist:0.7},   // [162]
+    'コメダ珈琲店':{dir:'南西',ang:241.7,dist:0.527},   // [170-2]
+    '天ぷら一代':{dir:'南西',ang:232.6,dist:0.484},   // [171]
+    'ポポラマーマ':{dir:'南西',ang:226.1,dist:0.424},   // [172]
+    '紅虎餃子房':{dir:'南西',ang:217.6,dist:0.371},   // [173]
+    '築地食堂源ちゃん 銀座惣菜店':{dir:'南西',ang:206.1,dist:0.372},   // [174]
+    'タリーズコーヒー':{dir:'南',ang:177.1,dist:0.29},   // [175]
+    'ゴンチャ':{dir:'南',ang:178.8,dist:0.397},   // [176-A]
+    '乃が美 はなれ':{dir:'南',ang:180.2,dist:0.448},   // [176-B]
+    'いきなりステーキ':{dir:'南',ang:169.8,dist:0.455},   // [177]
+    '寿しまどか':{dir:'南',ang:159.4,dist:0.511},   // [178]
+    'しゃぶしゃぶ 美山':{dir:'南',ang:168.1,dist:0.616},   // [179]
+    'くいしんぼう':{dir:'南',ang:177.0,dist:0.598},   // [180]
+    '山本のハンバーグ':{dir:'南',ang:186.1,dist:0.58},   // [181]
+    'ビスヌ':{dir:'南西',ang:203.8,dist:0.553},   // [182]
+    'とんかつ 濱かつ':{dir:'南西',ang:211.4,dist:0.536},   // [183]
+    '元祖 辛麺屋桝元':{dir:'南西',ang:220.7,dist:0.554},   // [184]
+    '五穀':{dir:'南西',ang:228.7,dist:0.601},   // [185]
+    '北海道キッチン YOSHIMI':{dir:'南西',ang:239.4,dist:0.647},   // [186]
+    'シアトルズベストコーヒー':{dir:'南',ang:193.2,dist:0.818},   // [2012]
+    'スターバックス コーヒー イオンモール宮崎 North Mall 2階店':{dir:'東南',ang:129.5,dist:0.529},   // [235]
+    'ぼっけもん':{dir:'南西',ang:231.5,dist:0.382},   // [260]
+    '丸亀製麺':{dir:'南西',ang:220.2,dist:0.361},   // [261]
+    '魁力屋':{dir:'南西',ang:210.2,dist:0.332},   // [262]
+    'サーティワンアイスクリーム':{dir:'南',ang:197.7,dist:0.321},   // [263]
+    'ペッパーランチ':{dir:'南',ang:174.7,dist:0.338},   // [264]
+    '築地銀だこ':{dir:'南',ang:163.6,dist:0.358},   // [265]
+    'ケンタッキーフライドチキン':{dir:'南',ang:164.6,dist:0.404},   // [266]
+    'ミスタードーナツ':{dir:'南',ang:168.4,dist:0.484},   // [267]
+    'Dipper Dan':{dir:'南西',ang:217.0,dist:0.491},   // [268]
+    'サブウェイ':{dir:'南西',ang:225.3,dist:0.504},   // [269]
+    'マクドナルド':{dir:'南西',ang:237.7,dist:0.463},   // [270]
+    'ビビン亭':{dir:'南西',ang:209.6,dist:0.505},   // [271]
+    'もくてきち':{dir:'南',ang:175.8,dist:0.524},   // [272]
+};
+
 const SHOP_DIRECTION = {
-    'コメダ珈琲店 イオンモール宮崎店':      '北西',
-    'レモネードbyレモニカ イオンモール宮崎店': '中央',
-    'りんごとバター。苺のワルツ':           '北',
-    'インパクトワンプラス':                 '西',
-    'カルディコーヒーファーム':             '西',
-    '久世福商店':                           '西',
-    '北海道キッチン YOSHIMI':               '西',
-    '五穀':                                 '西',
-    '元祖 辛麺屋桝元':                      '中央',
-    'シアトルズベストコーヒー':             '中央',
-    'いきなりステーキ':                     '中央',
-    'カフェ イタリアン・トマト':           '中央',
-    '寿しまどか':                           '東',
-    '山本のハンバーグ':                     '中央',
-    '和食・洋食レストラン くいしんぼう':   '中央',
-    'しゃぶしゃぶ 美山':                    '南',
-    'とんかつ 濱かつ':                      '南',
-    '築地食堂源ちゃん':                     '南',
-    'スターバックスコーヒー イオンモール宮崎 South Mall 1階店': '北',
-    'ゴディバ':                             '東',
-    'ゴンチャ':                             '東',
-    'サーティワンアイスクリーム':           '中央',
-    '杉養蜂園':                             '東',
-    '十勝あんこのサザエ':                   '東',
-    '乃が美 はなれ':                        '南',
-    'LUPICIA':                              '東',
-    'ワインショップニコラ':                 '東',
-    'Dipper Dan CREPE':                     '中央',
-    '丸亀製麺':                             '中央',
-    'てんぷら一代':                         '東',
-    'ラーメン 魁力屋':                      '中央',
-    'もくてきち':                           '中央',
-    'からあげの店 唐十':                    '東',
-    'ぼっけもん':                           '中央',
-    'くだものかふぇ':                       '中央',
-    'ケンタッキーフライドチキン':           '東',
-    'SUBWAY':                               '中央',
-    '築地銀だこ':                           '中央',
-    'インド料理 ビスヌ':                    '東',
-    'ビビン亭 イオンモール宮崎店':          '東',
-    '紅虎餃子房':                           '中央',
-    'ペッパーランチ':                       '東',
-    'ポポラマーマ':                         '中央',
-    'マクドナルド':                         '中央',
-    'ミスタードーナツ':                     '中央',
-    'ミニヨン':                             '中央',
-    'スターバックスコーヒー イオンモール宮崎 North Mall 2階店': '東',
-    'タリーズコーヒー':                     '東',
-    'だがし夢や':                           '中央',
+    'スターバックスコーヒー イオンモール宮崎 South Mall 1階店':'南',   // [1023]
+    'レモネード by レモニカ':'西',   // [103-A]
+    'ゴディバ':'南',   // [1031]
+    'カフェ イタリアン・トマト':'東南',   // [137-C]
+    'くだものかふぇ':'西',   // [162]
+    'コメダ珈琲店':'南西',   // [170-2]
+    '天ぷら一代':'南西',   // [171]
+    'ポポラマーマ':'南西',   // [172]
+    '紅虎餃子房':'南西',   // [173]
+    '築地食堂源ちゃん 銀座惣菜店':'南西',   // [174]
+    'タリーズコーヒー':'南',   // [175]
+    'ゴンチャ':'南',   // [176-A]
+    '乃が美 はなれ':'南',   // [176-B]
+    'いきなりステーキ':'南',   // [177]
+    '寿しまどか':'南',   // [178]
+    'しゃぶしゃぶ 美山':'南',   // [179]
+    'くいしんぼう':'南',   // [180]
+    '山本のハンバーグ':'南',   // [181]
+    'ビスヌ':'南西',   // [182]
+    'とんかつ 濱かつ':'南西',   // [183]
+    '元祖 辛麺屋桝元':'南西',   // [184]
+    '五穀':'南西',   // [185]
+    '北海道キッチン YOSHIMI':'南西',   // [186]
+    'シアトルズベストコーヒー':'南',   // [2012]
+    'スターバックス コーヒー イオンモール宮崎 North Mall 2階店':'東南',   // [235]
+    'ぼっけもん':'南西',   // [260]
+    '丸亀製麺':'南西',   // [261]
+    '魁力屋':'南西',   // [262]
+    'サーティワンアイスクリーム':'南',   // [263]
+    'ペッパーランチ':'南',   // [264]
+    '築地銀だこ':'南',   // [265]
+    'ケンタッキーフライドチキン':'南',   // [266]
+    'ミスタードーナツ':'南',   // [267]
+    'Dipper Dan':'南西',   // [268]
+    'サブウェイ':'南西',   // [269]
+    'マクドナルド':'南西',   // [270]
+    'ビビン亭':'南西',   // [271]
+    'もくてきち':'南',   // [272]
 };
 
 // getFengShuiLuckyDir → getKyuseiDayScore に統合済み
@@ -916,91 +939,112 @@ function getKyuseiDayScore(now) {
 
 
 // 風水スコア計算（本命星×年盤×月盤の三層相性を反映）
+// ════════════════════════════════════════════════════════════
+//  スコア比重（一元管理）
+//  見直し前は shopUnique（店名ハッシュをsinに通した疑似乱数）が
+//  順位のばらつきの約50%を占め、占術要素4つの合計と同等の重みを持っていた。
+//  乱数は「日替わりの変化をつける」役割に留め、占術要素を主役に戻す。
+//    UNIQ_W  : shopUnique の振幅倍率（1.0 が旧来）
+//    FENG_W  : 風水スコア内での方位の比率（残りは九星三層スコア）
+//    W_*     : 各占術要素の倍率
+// ════════════════════════════════════════════════════════════
+const UNIQ_W = 0.42;   // 振幅 ±23 → ±9.7（旧比 42%）
+const FENG_W = 0.75;
+const W_FENG = 2.20;   // 方位・九星
+const W_TIME = 1.00;   // 時間帯×ジャンル
+const W_DAY  = 1.00;   // 日盤×店エレメント
+const W_ELEM = 1.45;   // 本命エレメント相性
+
+// 8方位の中心角（北=0°・時計回り）
+const DIR_ANGLE = {'北':0,'北東':45,'東':90,'東南':135,'南':180,'南西':225,'西':270,'北西':315};
+// C smart のごく近傍は方位が定まらないため「中央」扱いにする閾値
+const CENTER_DIST = 0.10;
+
+function angDiff(a, b) { const d = Math.abs(a - b) % 360; return d > 180 ? 360 - d : d; }
+
 function getFengShuiScore(shopName, now) {
-    const dir = SHOP_DIRECTION[shopName] || '中央';
-    // 九星三層スコア: 本命星(七赤金星=金) vs 年盤・月盤
+    const geo = SHOP_GEO[shopName];
     const kds = getKyuseiDayScore(now);
-    const kyuseiBonus = kds.total; // -6〜+10の範囲
-    
-    // 方位ベースのベーススコア
-    // 月盤中宮星の定位置から吉方位を決定
+    const kyuseiBonus = kds.total;                       // -6〜+10（全店共通・順位には影響しない）
     const monthBoardIdx = KYUSEI_LIST.indexOf(kds.monthBoard);
     const BOARD_LUCKY_DIR = [
         ['南','東南'],   // 一白水星
         ['北東','西'],   // 二黒土星
         ['東','北'],     // 三碧木星
         ['東南','南'],   // 四緑木星
-        ['中央'],        // 五黄土星（凶）
+        ['中央'],        // 五黄土星（中宮＝定位。特定の吉方位を持たない）
         ['北西','西'],   // 六白金星
         ['西','北西'],   // 七赤金星
         ['北東','南西'], // 八白土星
         ['南','東'],     // 九紫火星
     ];
     const luckyDirs = BOARD_LUCKY_DIR[monthBoardIdx] || ['中央'];
-    
+
+    // ── 方位スコア（-3〜10）: 8方位の一致判定ではなく、吉方位との「角度差」で連続評価する。
+    //    旧実装は 10/5/3/-3 の4値しか取らず、C smart 起点だと方位が南・南西に集中して
+    //    38店中34店が同点になり、五黄土星の月は全店同点で方位が完全に無効化していた。
+    //    連続化により全店に差がつき、旧実装の水準（一致=10 / 直角=約3 / 正反対=-3）は保たれる。
     let dirScore;
-    if (dir === '中央') dirScore = 5;
-    else if (luckyDirs.includes(dir)) dirScore = 10;
-    else {
-        const opp = {'北':'南','南':'北','東':'西','西':'東','北東':'南西','南西':'北東','東南':'北西','北西':'東南'};
-        const bad = luckyDirs.map(d => opp[d]).filter(Boolean);
-        dirScore = bad.includes(dir) ? -3 : 3;
+    if (!geo) {
+        dirScore = 3;
+    } else if (luckyDirs.indexOf('中央') >= 0) {
+        // 五黄土星の月: 中央＝原点(C smart)。遠出ほど利が薄く、近場ほど安全と読む
+        dirScore = 10 - geo.dist * 7;                     // 至近10 → 最遠3
+    } else if (geo.dist < CENTER_DIST) {
+        dirScore = 5;                                     // 原点至近は方位が定まらない
+    } else {
+        let d = 180;
+        for (const L of luckyDirs) {
+            const c = DIR_ANGLE[L];
+            if (c !== undefined) d = Math.min(d, angDiff(geo.ang, c));
+        }
+        dirScore = 10 - (d / 180) * 13;                   // 0°→10 / 90°→3.5 / 180°→-3
     }
-    // 方位スコア(70%) + 九星三層スコア(30%) を合算
-    return Math.round(dirScore * 0.7 + kyuseiBonus * 0.3);
+    return dirScore * FENG_W + kyuseiBonus * (1 - FENG_W);
 }
 
 // フロアマップ座標データ
+// 座標は公式フロアマップ(2026.03.01現在)の区画番号をOCRで抽出し、
+// 公式サイトの店名→区画番号で結合して確定（全38件）。
 const SHOP_MAP_POS = {
-  'コメダ珈琲店 イオンモール宮崎店': {floor:'1F',x:33.5,y:39.0},
-  'レモネードbyレモニカ イオンモール宮崎店': {floor:'2F',x:46.0,y:44.5},
-  'りんごとバター。苺のワルツ': {floor:'1F',x:29.0,y:33.0},
-  'インパクトワンプラス': {floor:'1F',x:38.5,y:57.0},
-  'カルディコーヒーファーム': {floor:'1F',x:38.0,y:53.5},
-  '久世福商店': {floor:'1F',x:41.0,y:48.5},
-  '北海道キッチン YOSHIMI': {floor:'1F',x:42.0,y:55.5},
-  '五穀': {floor:'1F',x:43.5,y:53.0},
-  '元祖 辛麺屋桝元': {floor:'1F',x:48.5,y:55.0},
-  'シアトルズベストコーヒー': {floor:'1F',x:50.0,y:58.0},
-  'いきなりステーキ': {floor:'1F',x:47.0,y:59.0},
-  'カフェ イタリアン・トマト': {floor:'1F',x:52.5,y:61.0},
-  '寿しまどか': {floor:'1F',x:52.0,y:65.5},
-  '山本のハンバーグ': {floor:'1F',x:45.5,y:67.0},
-  '和食・洋食レストラン くいしんぼう': {floor:'1F',x:44.0,y:69.5},
-  'しゃぶしゃぶ 美山': {floor:'1F',x:47.0,y:72.0},
-  'とんかつ 濱かつ': {floor:'1F',x:49.0,y:67.5},
-  '築地食堂源ちゃん': {floor:'1F',x:50.5,y:70.5},
-  'スターバックスコーヒー イオンモール宮崎 South Mall 1階店': {floor:'1F',x:30.5,y:41.0},
-  'ゴディバ': {floor:'1F',x:71.5,y:72.0},
-  'ゴンチャ': {floor:'1F',x:72.0,y:74.5},
-  'サーティワンアイスクリーム': {floor:'2F',x:49.5,y:48.5},
-  '杉養蜂園': {floor:'1F',x:68.5,y:72.5},
-  '十勝あんこのサザエ': {floor:'1F',x:69.0,y:75.5},
-  '乃が美 はなれ': {floor:'1F',x:52.5,y:73.5},
-  'LUPICIA': {floor:'1F',x:71.5,y:77.0},
-  'ワインショップニコラ': {floor:'1F',x:73.0,y:79.0},
-  'Dipper Dan CREPE': {floor:'2F',x:46.5,y:53.5},
-  '丸亀製麺': {floor:'2F',x:48.0,y:50.5},
-  'てんぷら一代': {floor:'2F',x:53.0,y:47.5},
-  'ラーメン 魁力屋': {floor:'2F',x:50.5,y:52.0},
-  'もくてきち': {floor:'2F',x:44.5,y:57.0},
-  'からあげの店 唐十': {floor:'2F',x:53.5,y:54.5},
-  'ぼっけもん': {floor:'2F',x:44.0,y:53.0},
-  'くだものかふぇ': {floor:'2F',x:51.5,y:45.5},
-  'ケンタッキーフライドチキン': {floor:'2F',x:54.5,y:52.0},
-  'SUBWAY': {floor:'2F',x:46.0,y:55.5},
-  '築地銀だこ': {floor:'2F',x:44.5,y:49.5},
-  'インド料理 ビスヌ': {floor:'2F',x:56.0,y:53.5},
-  'ビビン亭 イオンモール宮崎店': {floor:'2F',x:54.0,y:56.5},
-  '紅虎餃子房': {floor:'2F',x:51.0,y:58.5},
-  'ペッパーランチ': {floor:'2F',x:55.5,y:58.5},
-  'ポポラマーマ': {floor:'2F',x:50.0,y:61.0},
-  'マクドナルド': {floor:'2F',x:46.0,y:50.0},
-  'ミスタードーナツ': {floor:'2F',x:51.5,y:57.0},
-  'ミニヨン': {floor:'2F',x:48.5,y:62.5},
-  'スターバックスコーヒー イオンモール宮崎 North Mall 2階店': {floor:'2F',x:62.0,y:45.0},
-  'タリーズコーヒー': {floor:'2F',x:63.5,y:47.0},
-  'だがし夢や': {floor:'2F',x:43.0,y:58.5},
+  'スターバックスコーヒー イオンモール宮崎 South Mall 1階店': {floor:'1F',x:62.8,y:73.7},   // [1023]
+  'レモネード by レモニカ': {floor:'1F',x:31.7,y:35.4},   // [103-A]
+  'ゴディバ': {floor:'1F',x:65.9,y:74.2},   // [1031]
+  'カフェ イタリアン・トマト': {floor:'1F',x:70.2,y:54.0},   // [137-C]
+  'くだものかふぇ': {floor:'1F',x:35.4,y:39.0},   // [162]
+  'コメダ珈琲店': {floor:'1F',x:42.2,y:44.3},   // [170-2]
+  '天ぷら一代': {floor:'1F',x:44.6,y:46.2},   // [171]
+  'ポポラマーマ': {floor:'1F',x:47.0,y:46.2},   // [172]
+  '紅虎餃子房': {floor:'1F',x:49.4,y:46.2},   // [173]
+  '築地食堂源ちゃん 銀座惣菜店': {floor:'1F',x:51.3,y:47.9},   // [174]
+  'タリーズコーヒー': {floor:'1F',x:56.7,y:46.0},   // [175]
+  'ゴンチャ': {floor:'1F',x:56.5,y:50.6},   // [176-A]
+  '乃が美 はなれ': {floor:'1F',x:56.2,y:52.8},   // [176-B]
+  'いきなりステーキ': {floor:'1F',x:58.7,y:52.8},   // [177]
+  '寿しまどか': {floor:'1F',x:61.7,y:54.1},   // [178]
+  'しゃぶしゃぶ 美山': {floor:'1F',x:60.1,y:59.4},   // [179]
+  'くいしんぼう': {floor:'1F',x:57.2,y:59.2},   // [180]
+  '山本のハンバーグ': {floor:'1F',x:54.4,y:58.3},   // [181]
+  'ビスヌ': {floor:'1F',x:49.5,y:55.3},   // [182]
+  'とんかつ 濱かつ': {floor:'1F',x:47.8,y:53.2},   // [183]
+  '元祖 辛麺屋桝元': {floor:'1F',x:45.3,y:51.6},   // [184]
+  '五穀': {floor:'1F',x:42.6,y:50.6},   // [185]
+  '北海道キッチン YOSHIMI': {floor:'1F',x:39.4,y:47.7},   // [186]
+  'シアトルズベストコーヒー': {floor:'2F',x:50.6,y:67.7},   // [2012]
+  'スターバックス コーヒー イオンモール宮崎 North Mall 2階店': {floor:'2F',x:68.6,y:48.0},   // [235]
+  'ぼっけもん': {floor:'2F',x:47.2,y:43.8},   // [260]
+  '丸亀製麺': {floor:'2F',x:49.2,y:45.4},   // [261]
+  '魁力屋': {floor:'2F',x:51.2,y:45.9},   // [262]
+  'サーティワンアイスクリーム': {floor:'2F',x:53.3,y:46.7},   // [263]
+  'ペッパーランチ': {floor:'2F',x:57.2,y:48.0},   // [264]
+  '築地銀だこ': {floor:'2F',x:59.3,y:48.3},   // [265]
+  'ケンタッキーフライドチキン': {floor:'2F',x:59.5,y:50.3},   // [266]
+  'ミスタードーナツ': {floor:'2F',x:59.2,y:53.9},   // [267]
+  'Dipper Dan': {floor:'2F',x:47.3,y:50.4},   // [268]
+  'サブウェイ': {floor:'2F',x:45.4,y:48.8},   // [269]
+  'マクドナルド': {floor:'2F',x:44.4,y:44.2},   // [270]
+  'ビビン亭': {floor:'2F',x:48.7,y:52.4},   // [271]
+  'もくてきち': {floor:'2F',x:57.4,y:56.0},   // [272]
 };
 
 // ========== 占術計算エンジン ==========
@@ -1280,14 +1324,16 @@ function calculateRestaurantScores(now) {
             else timePt=2;
         }
 
-        // 3. 店舗固有sin（全店ユニーク float、-23〜+23）
+        // 3. 店舗固有sin（全店ユニーク float）
+        //    占術で差がつかない店同士を毎日入れ替えるための変化装置。
+        //    UNIQ_W で振幅を絞り、順位の主導権を占術要素に戻している。
         const shopHash = shop.name.split("").reduce((a,cc) => ((a*31 + cc.charCodeAt(0)) & 0x7FFFFFFF), 0);
         const dailySeed = now.getFullYear()*10000+(now.getMonth()+1)*100+now.getDate();
         const moonAge = moonPhase.age||0;
         const sig1 = Math.sin(shopHash*0.7853981 + dailySeed*0.137)*10;
         const sig2 = Math.sin(shopHash*1.2345678 + dailySeed*0.071)*8;
         const sig3 = Math.sin(shopHash*2.7182818  + moonAge*0.15 + dailySeed*0.031)*5;
-        const shopUnique = sig1+sig2+sig3;
+        const shopUnique = (sig1+sig2+sig3) * UNIQ_W;
 
         // 4. 風水 (-3〜+12)
         const fengPt = getFengShuiScore(shop.name, now);
@@ -1298,7 +1344,8 @@ function calculateRestaurantScores(now) {
         const dElem = dayKyuseiNow.elem;
         const dayShopPt = (SHOP_ELEM_COMPAT[dElem]&&SHOP_ELEM_COMPAT[dElem][shop.element])||0;
 
-        const raw = commonScore + elemPt + timePt + shopUnique + fengPt + dayShopPt;
+        const raw = commonScore + elemPt*W_ELEM + timePt*W_TIME + shopUnique
+                  + fengPt*W_FENG + dayShopPt*W_DAY;
         return { ...shop, raw, isOpen };
     });
 

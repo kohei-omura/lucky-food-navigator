@@ -948,9 +948,12 @@ function getKyuseiDayScore(now) {
 //    FENG_W  : 風水スコア内での方位の比率（残りは九星三層スコア）
 //    W_*     : 各占術要素の倍率
 // ════════════════════════════════════════════════════════════
-const UNIQ_W = 0.42;   // 振幅 ±23 → ±9.7（旧比 42%）
+// [v2] 1位独走バグ対策で再均衡（旧値: UNIQ_W=0.42 / W_FENG=2.20）
+//   風水スコアは月盤ベースで月内ほぼ固定のため、W_FENG が支配的だと
+//   同じ店が毎日1位になる。方位の比重を下げ、日替わり変動を戻す。
+const UNIQ_W = 0.80;   // 旧0.42 → 振幅 ±9.7 → ±18.4（日替わりの主役に戻す）
 const FENG_W = 0.75;
-const W_FENG = 2.20;   // 方位・九星
+const W_FENG = 1.30;   // 旧2.20 → 静的優位を緩める
 const W_TIME = 1.00;   // 時間帯×ジャンル
 const W_DAY  = 1.00;   // 日盤×店エレメント
 const W_ELEM = 1.45;   // 本命エレメント相性
@@ -1000,7 +1003,31 @@ function getFengShuiScore(shopName, now) {
         }
         dirScore = 10 - (d / 180) * 13;                   // 0°→10 / 90°→3.5 / 180°→-3
     }
-    return dirScore * FENG_W + kyuseiBonus * (1 - FENG_W);
+    // [v2] 月盤・年盤由来は50%に減衰し、日盤由来を150%に増幅する。
+    //      判定ロジック（角度差評価）は一切変えず、最終加算時の係数のみ調整。
+    //      これで方位スコアが「月内固定」から「日替わり」に主導権が移る。
+    const MB_COEF = 0.5;   // 月盤・年盤由来
+    const DB_COEF = 1.5;   // 日盤由来
+    // 日盤の吉方位で同じ角度差評価を行う（判定式は上と同一）
+    const dayBoardIdx = KYUSEI_LIST.indexOf(getDayKyusei(now).name);
+    const dayDirs = BOARD_LUCKY_DIR[dayBoardIdx] || ['中央'];
+    let dayDirScore;
+    if (!geo) {
+        dayDirScore = 3;
+    } else if (dayDirs.indexOf('中央') >= 0) {
+        dayDirScore = 10 - geo.dist * 7;
+    } else if (geo.dist < CENTER_DIST) {
+        dayDirScore = 5;
+    } else {
+        let dd = 180;
+        for (const L of dayDirs) {
+            const c = DIR_ANGLE[L];
+            if (c !== undefined) dd = Math.min(dd, angDiff(geo.ang, c));
+        }
+        dayDirScore = 10 - (dd / 180) * 13;
+    }
+    const dirMix = (dirScore * MB_COEF + dayDirScore * DB_COEF) / (MB_COEF + DB_COEF);
+    return dirMix * FENG_W + kyuseiBonus * (1 - FENG_W);
 }
 
 // フロアマップ座標データ
@@ -1346,7 +1373,19 @@ function calculateRestaurantScores(now) {
 
         const raw = commonScore + elemPt*W_ELEM + timePt*W_TIME + shopUnique
                   + fengPt*W_FENG + dayShopPt*W_DAY;
-        return { ...shop, raw, isOpen };
+        // [v2] 2-B 理由チップ用に内訳を保持（合算式そのものは不変）
+        const _bd = {
+            rokuyo:  rokuyoPt,
+            moon:    moonPt,
+            elem:    elemPt*W_ELEM,
+            time:    timePt*W_TIME,
+            feng:    fengPt*W_FENG,
+            day:     dayShopPt*W_DAY,
+            uniq:    shopUnique,
+            dayName: dayKyuseiNow.name,
+            rokuyoName: rokuyo
+        };
+        return { ...shop, raw, isOpen, _bd };
     });
 
     // ── min-max正規化 → 60.0〜99.9にマッピング（全店ユニーク）──
@@ -1447,6 +1486,206 @@ function updateTime() {
 updateTime();
 setInterval(updateTime, 60000);
 
+
+// ════════════════════════════════════════════════════════════
+// [v2] 1位のローテーション（同じ店の独走を防ぐ）
+//   直近3日間に1位だった店は、当日の1位候補から外して2位以下へ回す。
+//   候補リストからは消さないので、店が選択肢から消えることはない。
+// ════════════════════════════════════════════════════════════
+const LFN_TOP_KEY   = 'lfn_top_hist';   // [{date:'YYYY-MM-DD',name:'◯◯'},…] 最大7件
+// [v2] 受け入れ基準①（30日で同一店の1位が5回以下）を満たすための日数。
+//   3日除外だと最短4日周期＝30日で最大7.5回となり①を超えるため5日とした。
+//   基準②「直近3日の1位が当日1位に出ない」は5日除外に含まれるので同時に満たす。
+const LFN_TOP_DAYS  = 5;                // 直近この日数の1位は当日1位にしない
+const LFN_TOP_MAX   = 7;
+
+function lfnDateKey(d) {
+    const m = ('0' + (d.getMonth() + 1)).slice(-2);
+    const day = ('0' + d.getDate()).slice(-2);
+    return d.getFullYear() + '-' + m + '-' + day;
+}
+function lfnTopHist() {
+    try { return JSON.parse(localStorage.getItem(LFN_TOP_KEY) || '[]'); }
+    catch (e) { return []; }
+}
+function lfnRecentTops(now, days) {
+    const hist = lfnTopHist();
+    const today = lfnDateKey(now);
+    const limit = new Date(now.getTime() - (days || LFN_TOP_DAYS) * 86400000);
+    const from = lfnDateKey(limit);
+    return hist.filter(h => h && h.date && h.name && h.date < today && h.date >= from)
+               .map(h => h.name);
+}
+function lfnRecordTop(now, name) {
+    if (!name) return;
+    const today = lfnDateKey(now);
+    let hist = lfnTopHist();
+    if (hist.some(h => h && h.date === today)) return;   // 同日は重複記録しない
+    hist.unshift({ date: today, name: name });
+    hist = hist.slice(0, LFN_TOP_MAX);
+    try { localStorage.setItem(LFN_TOP_KEY, JSON.stringify(hist)); } catch (e) {}
+}
+
+// 日別シード（YYYYMMDD）。同じ日なら常に同じ結果になる決定論的な値。
+function lfnDaySeed(now) {
+    return now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
+}
+
+// [v2] 並びに対してローテーションと僅差入替を適用した配列を返す
+//   ・直近3日の1位は先頭に来ないよう後方へ送る
+//   ・1位と2位の差が1.5点未満なら日別シードで入替（同日内は常に同じ）
+function lfnApplyRotation(list, now) {
+    if (!list || list.length < 2) return (list || []).slice();
+    let arr = list.slice();
+    const recent = lfnRecentTops(now, LFN_TOP_DAYS);
+
+    // ① 直近3日の1位は先頭に置かない（候補からは消さず2位以下へ）
+    if (recent.length) {
+        const fresh = arr.filter(x => recent.indexOf(x.name) < 0);
+        if (fresh.length) {
+            const head = fresh[0];
+            arr = [head].concat(arr.filter(x => x !== head));
+        }
+        // 全店が直近1位なら降格しても意味がないのでそのまま
+    }
+
+    // ② 僅差（1.5点未満）なら日別シードで1位/2位を入替（同日内は常に同じ）
+    if (arr.length >= 2) {
+        const a0 = (arr[0].score != null) ? arr[0].score : 0;
+        const b0 = (arr[1].score != null) ? arr[1].score : 0;
+        if (Math.abs(a0 - b0) < 1.5 && recent.indexOf(arr[1].name) < 0) {
+            const seed = lfnDaySeed(now);
+            const h = (seed * 2654435761) % 2147483647;
+            if ((h % 2) === 1) { const t = arr[0]; arr[0] = arr[1]; arr[1] = t; }
+        }
+    }
+    return arr;
+}
+
+// ════════════════════════════════════════════════════════════
+// [v2] 気分フィルタ（その場限り・保存しない）
+//   チップ → ジャンル群の対応表
+//     🍖がっつり : 焼肉/ステーキ/とんかつ/中華/丼/カレー/ハンバーグ
+//     🥗さっぱり : 和食/寿司/海鮮/サラダ/定食
+//     🍜麺      : ラーメン/うどん/そば/パスタ/イタリアン
+//     🍰甘いもの : スイーツ/ケーキ/クレープ/アイス/パン
+//     ☕軽く    : カフェ/喫茶/ベーカリー/軽食
+// ════════════════════════════════════════════════════════════
+const LFN_MOOD = {
+    hearty: { label: '🍖がっつり', pat: /焼肉|ステーキ|とんかつ|カツ|中華|丼|カレー|ハンバーグ|肉|餃子/ },
+    light:  { label: '🥗さっぱり', pat: /和食|寿司|鮨|海鮮|サラダ|定食|そば処|野菜/ },
+    noodle: { label: '🍜麺',       pat: /ラーメン|うどん|そば|パスタ|イタリアン|麺/ },
+    sweet:  { label: '🍰甘いもの', pat: /スイーツ|ケーキ|クレープ|アイス|パフェ|ドーナツ|パン|洋菓子|和菓子/ },
+    cafe:   { label: '☕軽く',     pat: /カフェ|喫茶|ベーカリー|軽食|コーヒー|ティー/ }
+};
+const LFN_MOOD_BOOST = 12;      // 該当ジャンルへの加点
+let _lfnMood = null;            // その場限り（localStorageに保存しない）
+
+function lfnMoodMatch(shop, key) {
+    const m = LFN_MOOD[key];
+    if (!m) return false;
+    const hay = (shop.genre || '') + ' ' + (shop.name || '') + ' ' + ((shop.tags || []).join(' '));
+    return m.pat.test(hay);
+}
+function lfnSetMood(key) {
+    _lfnMood = (_lfnMood === key) ? null : key;   // 再タップで解除
+    startFortune();
+}
+function lfnMoodChips() {
+    return '<div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:10px 0 4px;">' +
+        Object.keys(LFN_MOOD).map(k => {
+            const on = (_lfnMood === k);
+            return '<button type="button" onclick="lfnSetMood(\'' + k + '\')" style="border:' +
+                (on ? '2px solid #FF6B6B' : '1px solid #eee') + ';border-radius:999px;padding:7px 13px;' +
+                'background:' + (on ? '#FFF0F0' : '#fff') + ';color:' + (on ? '#FF6B6B' : '#888') +
+                ';font-weight:900;font-size:0.8rem;cursor:pointer;">' + LFN_MOOD[k].label + '</button>';
+        }).join('') + '</div>';
+}
+
+
+// ════════════════════════════════════════════════════════════
+// [v2] 2-B 理由チップ：得点内訳の上位5要素を出す
+// ════════════════════════════════════════════════════════════
+function lfnReasonChips(shop, now) {
+    const b = shop._bd;
+    if (!b) return '';
+    let dirName = '';
+    try {
+        const geo = SHOP_GEO[shop.name];
+        if (geo) {
+            let best = null, bd = 999;
+            for (const k in DIR_ANGLE) {
+                const d = angDiff(geo.ang, DIR_ANGLE[k]);
+                if (d < bd) { bd = d; best = k; }
+            }
+            dirName = best || '';
+        }
+    } catch (e) {}
+    const items = [
+        { k: '六曜:' + b.rokuyoName, v: b.rokuyo },
+        { k: '月相',                 v: b.moon },
+        { k: '相性',                 v: b.elem },
+        { k: '時間帯:' + shop.genre, v: b.time },
+        { k: '方位' + (dirName ? ':' + dirName : ''), v: b.feng },
+        { k: '日盤:' + b.dayName,    v: b.day },
+        { k: '日替わり',             v: b.uniq }
+    ].filter(x => Math.abs(x.v) >= 0.5)
+     .sort((a, c) => Math.abs(c.v) - Math.abs(a.v))
+     .slice(0, 5);
+    if (!items.length) return '';
+    return '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:8px;">' +
+        items.map(x => {
+            const up = x.v >= 0;
+            const val = (up ? '+' : '') + (Math.round(x.v * 10) / 10);
+            return '<span style="font-size:0.68rem;padding:3px 8px;border-radius:999px;' +
+                'background:' + (up ? '#FFF3F3' : '#F2F4F8') + ';color:' + (up ? '#FF6B6B' : '#8894a6') +
+                ';font-weight:700;">' + x.k + ' ' + val + '</span>';
+        }).join('') + '</div>';
+}
+
+// ════════════════════════════════════════════════════════════
+// [v2] 2-C 週間プレビュー：明日から3日分の1位（当日は含まない）
+// ════════════════════════════════════════════════════════════
+function lfnPreview3(now) {
+    const WD = ['日','月','火','水','木','金','土'];
+    const rows = [];
+    // 当日の1位を仮の履歴に足したうえで、翌日以降を順に見積もる
+    const virtualTops = [];
+    for (let i = 1; i <= 3; i++) {
+        const d = new Date(now.getTime() + i * 86400000);
+        d.setHours(12, 0, 0, 0);                       // 昼どきを基準に見る
+        let list;
+        try { list = calculateRestaurantScores(d).filter(x => x.isOpen); }
+        catch (e) { list = []; }
+        if (!list.length) { rows.push({ d: d, name: '—' }); continue; }
+        // 実際の履歴＋この予測内で既に1位になった店を避ける
+        const avoid = lfnRecentTops(d, LFN_TOP_DAYS).concat(virtualTops);
+        let pick = list.find(x => avoid.indexOf(x.name) < 0) || list[0];
+        virtualTops.push(pick.name);
+        if (virtualTops.length > LFN_TOP_DAYS) virtualTops.shift();
+        rows.push({ d: d, name: pick.name });
+    }
+    return '<details style="margin-top:12px;background:#fff;border-radius:14px;padding:12px 14px;">' +
+        '<summary style="cursor:pointer;font-weight:900;color:#FF6B6B;font-size:0.9rem;">📅 向こう3日の1位予測</summary>' +
+        '<div style="margin-top:10px;display:flex;flex-direction:column;gap:7px;">' +
+        rows.map(r => '<div style="display:flex;gap:10px;font-size:0.85rem;">' +
+            '<span style="color:#999;min-width:5.2em;">' + (r.d.getMonth() + 1) + '/' + r.d.getDate() +
+            '(' + WD[r.d.getDay()] + ')</span><span style="font-weight:700;">' + r.name + '</span></div>').join('') +
+        '</div><div style="margin-top:8px;font-size:0.7rem;color:#bbb;">※ 当日の運勢で変わることがあります</div></details>';
+}
+
+// ════════════════════════════════════════════════════════════
+// [v2] 2-D 開店前バッジ
+// ════════════════════════════════════════════════════════════
+function lfnOpenBadge(shop, now) {
+    if (shop.isOpen) return '';
+    const h = now.getHours();
+    const o = shop.hours.open, c = shop.hours.close;
+    const txt = (h < o) ? ('⏰開店前(' + o + ':00〜)') : ('⏰本日終了(' + c + ':00まで)');
+    return '<span style="display:inline-block;margin-left:6px;font-size:0.68rem;padding:2px 8px;' +
+        'border-radius:999px;background:#F2F4F8;color:#8894a6;font-weight:700;">' + txt + '</span>';
+}
+
 // ========== 占い実行 ==========
 function startFortune() {
     document.getElementById('loading').classList.add('show');
@@ -1454,8 +1693,16 @@ function startFortune() {
     
     setTimeout(() => {
         const now = new Date();
-        const ranked = calculateRestaurantScores(now);
-        const openShops   = ranked.filter(s => s.isOpen);
+        let ranked = calculateRestaurantScores(now);
+        // [v2] 2-A 気分フィルタ：該当ジャンルに +12 して再ランキング（その場限り）
+        if (_lfnMood) {
+            ranked = ranked.map(x => {
+                const hit = lfnMoodMatch(x, _lfnMood);
+                return { ...x, score: Math.round((x.score + (hit ? LFN_MOOD_BOOST : 0)) * 10) / 10, _moodHit: hit };
+            }).sort((a, b) => b.score - a.score);
+        }
+        // [v2] 1-A/1-C 直近3日の1位を外し、僅差なら日別シードで入替
+        const openShops   = lfnApplyRotation(ranked.filter(s => s.isOpen), now);
         const closedShops = ranked.filter(s => !s.isOpen);
         
         // ── サマリーヘッダー ──
@@ -1463,6 +1710,7 @@ function startFortune() {
         const moonPhase = getMoonPhase(now);
         const lunar = getLunarDate(now);
         const top1 = openShops[0] || ranked[0];
+        if (top1) lfnRecordTop(now, top1.name);   // [v2] 当日の1位を記録（同日重複なし）
         const medals = ['🥇','🥈','🥉'];
 
         // 候補順を構築（スコア順 → 被り回避で降格。表示ランキングには影響させない）
@@ -1482,6 +1730,7 @@ function startFortune() {
                 <button type="button" onclick="lfnCycleCandidate()" style="border:none;border-radius:999px;padding:9px 16px;background:#fff;color:#FF6B6B;font-weight:900;font-size:0.85rem;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.08);">🎲 別の候補</button>
                 <button type="button" onclick="lfnShare(this)" style="border:none;border-radius:999px;padding:9px 16px;background:#fff;color:#FF6B6B;font-weight:900;font-size:0.85rem;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.08);">📤 共有</button>
             </div>
+            ${lfnMoodChips()}
             <div id="candNav" style="text-align:center;margin-top:8px;font-size:0.75rem;color:#999;"></div>
             <label style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:8px;font-size:0.75rem;color:#999;cursor:pointer;">
                 <input type="checkbox" onchange="lfnToggleAvoid(this)" ${lfnAvoidOn()?'checked':''}>被り回避（直近${LFN_AVOID_DAYS}日と同じ店を後ろへ回す）
@@ -1530,8 +1779,9 @@ function startFortune() {
                             <div class="shop-location">${shop.floor} ${shop.area} ／ ${shop.genre} ／ 営業:${shop.hours.open}:00〜${shop.hours.close}:00</div>
                         </div>
                     </div>
-                    <div class="score-badge" style="background:${scoreColor};">運気スコア：${shop.score.toFixed(1)}点</div>
+                    <div class="score-badge" style="background:${scoreColor};">運気スコア：${shop.score.toFixed(1)}点${shop._moodHit?' <span style="font-size:0.72rem;">(気分+'+LFN_MOOD_BOOST+')</span>':''}</div>
                     <div class="reason">${generateReason(shop, i+1, now)}</div>
+                    ${i===0 ? lfnReasonChips(shop, now) : ''}
                     <div class="tags">${shop.tags.map(t => `<span class="tag">#${t}</span>`).join('')}</div>
                 </div>`;
             });
@@ -1553,7 +1803,7 @@ function startFortune() {
                         <div class="shop-icon">${shop.emoji}</div>
                         <div class="shop-info">
                             <div class="shop-name shop-name-link" onclick="openMap(this.dataset.name)" data-name="${shop.name}"><span class="map-pin-icon">📍</span>${shop.name}</div>
-                            <div class="shop-location">${shop.floor} ${shop.area} ／ 営業:${shop.hours.open}:00〜${shop.hours.close}:00</div>
+                            <div class="shop-location">${shop.floor} ${shop.area} ／ 営業:${shop.hours.open}:00〜${shop.hours.close}:00${lfnOpenBadge(shop, now)}</div>
                         </div>
                     </div>
                     <div class="score-badge" style="background:${scoreColor};">運気スコア：${shop.score.toFixed(1)}点</div>
@@ -1563,6 +1813,7 @@ function startFortune() {
             html += '</details>';
         }
         
+        html += lfnPreview3(now);          // [v2] 2-C 向こう3日の1位予測
         html += '<button class="back-btn" onclick="startFortune()">🔮 再占い</button>';
         
         document.getElementById('result').innerHTML = html;

@@ -2,8 +2,11 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>🍽️ Lucky Food Navigator</title>
+    <meta name="description" content="イオンモール宮崎 開運グルメガイド｜六曜・月相・九星気学・風水であなたに最適な店を占う">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700;900&family=M+PLUS+Rounded+1c:wght@400;700;900&display=swap" rel="stylesheet">
     <!-- PWA -->
     <link rel="manifest" href="manifest.json">
@@ -427,6 +430,8 @@
         .map-img {
             width: 100%;
             display: block;
+            aspect-ratio: 1200 / 848;   /* 読み込み前後でレイアウトが動かないように */
+            background: #f5f5f5;
         }
         .map-marker {
             position: absolute;
@@ -477,6 +482,17 @@
         .shop-name-link:hover { text-decoration: underline; }
         .map-pin-icon { font-size: 0.85em; }
 
+        /* 端末の「視差効果を減らす」設定を尊重する。
+           背景の星・フード絵文字は無限アニメーションでバッテリーを消費するため停止する。 */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
+            .bg-deco { display: none; }
+        }
         </style>
 </head>
 <body>
@@ -635,46 +651,12 @@ const SHOP_GEO = {
     'もくてきち':{dir:'南',ang:175.8,dist:0.524},   // [272]
 };
 
-const SHOP_DIRECTION = {
-    'スターバックスコーヒー イオンモール宮崎 South Mall 1階店':'南',   // [1023]
-    'レモネード by レモニカ':'西',   // [103-A]
-    'ゴディバ':'南',   // [1031]
-    'カフェ イタリアン・トマト':'東南',   // [137-C]
-    'くだものかふぇ':'西',   // [162]
-    'コメダ珈琲店':'南西',   // [170-2]
-    '天ぷら一代':'南西',   // [171]
-    'ポポラマーマ':'南西',   // [172]
-    '紅虎餃子房':'南西',   // [173]
-    '築地食堂源ちゃん 銀座惣菜店':'南西',   // [174]
-    'タリーズコーヒー':'南',   // [175]
-    'ゴンチャ':'南',   // [176-A]
-    '乃が美 はなれ':'南',   // [176-B]
-    'いきなりステーキ':'南',   // [177]
-    '寿しまどか':'南',   // [178]
-    'しゃぶしゃぶ 美山':'南',   // [179]
-    'くいしんぼう':'南',   // [180]
-    '山本のハンバーグ':'南',   // [181]
-    'ビスヌ':'南西',   // [182]
-    'とんかつ 濱かつ':'南西',   // [183]
-    '元祖 辛麺屋桝元':'南西',   // [184]
-    '五穀':'南西',   // [185]
-    '北海道キッチン YOSHIMI':'南西',   // [186]
-    'シアトルズベストコーヒー':'南',   // [2012]
-    'スターバックス コーヒー イオンモール宮崎 North Mall 2階店':'東南',   // [235]
-    'ぼっけもん':'南西',   // [260]
-    '丸亀製麺':'南西',   // [261]
-    '魁力屋':'南西',   // [262]
-    'サーティワンアイスクリーム':'南',   // [263]
-    'ペッパーランチ':'南',   // [264]
-    '築地銀だこ':'南',   // [265]
-    'ケンタッキーフライドチキン':'南',   // [266]
-    'ミスタードーナツ':'南',   // [267]
-    'Dipper Dan':'南西',   // [268]
-    'サブウェイ':'南西',   // [269]
-    'マクドナルド':'南西',   // [270]
-    'ビビン亭':'南西',   // [271]
-    'もくてきち':'南',   // [272]
-};
+// 方位ラベル。旧実装は SHOP_GEO とは別に38件を手打ちで二重管理していたが、
+// 全38件が SHOP_GEO[].dir と完全一致していた。片方だけ直して食い違う事故を防ぐため導出に変更。
+const SHOP_DIRECTION = Object.keys(SHOP_GEO).reduce(function (acc, n) {
+    acc[n] = SHOP_GEO[n].dir;
+    return acc;
+}, {});
 
 // getFengShuiLuckyDir → getKyuseiDayScore に統合済み
 
@@ -697,35 +679,50 @@ const BIRTH_KYUSEI_ELEMENT = '金';
 const BIRTH_MONTH_KYUSEI = '四緑木星'; // 月命星(4月生まれ)
 const BIRTH_MONTH_ELEMENT = '木';
 
+// ════════════════════════════════════════════════════════════
+//  節入り日（十二節気）を天文計算で求める
+//  旧実装は 2024-2030 の手打ちテーブル（"keisan.site準拠・完全正確版"）だったが、
+//  実際には2つの不具合があった:
+//    (a) 84件中11件が誤り。例: 2024年の小暑を 7/7 としていたが正しくは 7/6
+//        （本エンジンの計算値 7/6 23:17 JST は公表値 23:20 と3分差）。
+//    (b) 2031年以降は SETSU_TABLE_M[2026] にフォールバックし、
+//        全月の月盤が静かにずれる（2031年は12ヶ月すべて誤り）。
+//  六曜・月相・至日で既に使っている _solarTermUT を流用し、全年を正しく算出する。
+//  節気の太陽黄経: 小寒285°,立春315°,啓蟄345°,清明15°,立夏45°,芒種75°,
+//                  小暑105°,立秋135°,白露165°,寒露195°,立冬225°,大雪255°
+// ════════════════════════════════════════════════════════════
+const SETSU_ANGLE = [285,315,345,15,45,75,105,135,165,195,225,255];
+const _setsuCache = {};
+// y年m月の節入り日（JST暦日）を返す
+function getSetsuDay(y, m) {
+  const key = y * 100 + m;
+  if (_setsuCache[key] !== undefined) return _setsuCache[key];
+  const approx = Date.UTC(y, m - 1, 6) / 86400000 + 2440587.5;   // 節入りは毎月4〜8日頃
+  const jstJd = _solarTermUT(approx, SETSU_ANGLE[m - 1]) + 9 / 24;
+  const ep = _civilDay(jstJd) - 2440588;
+  return _setsuCache[key] = new Date(ep * 86400000).getUTCDate();
+}
+
 // ── 年盤中宮星（立春〜翌立春）──
 // オフセット+3で検証済み (2026→一白水星 ✅, 2025→五黄土星 ✅)
 function getYearBoard(now) {
-  // 立春(2/4頃)前は前年扱い
-  const y = (now.getMonth() < 1 || (now.getMonth() === 1 && now.getDate() < 4)) 
-    ? now.getFullYear() - 1 : now.getFullYear();
+  // 立春前は前年扱い。旧実装は立春を 2/4 固定としていたため、
+  // 立春が 2/3 になる年（2021・2025・2029…）の 2/3 だけ年盤が1年ずれていた。
+  const m = now.getMonth(), d = now.getDate();
+  const risshun = getSetsuDay(now.getFullYear(), 2);
+  const y = (m < 1 || (m === 1 && d < risshun)) ? now.getFullYear() - 1 : now.getFullYear();
   const ep = Math.floor(Date.UTC(y,0,1) / 86400000);
   return KYUSEI_LIST[(ep + 3) % 9];
 }
 
-// ── 月盤中宮星（節入り日テーブル）──
+// ── 月盤中宮星 ──
 // 各年の寅月(立春)から陰遁で毎月-1
 function getMonthBoard(now) {
   const y = now.getFullYear();
   const m = now.getMonth() + 1;
   const d = now.getDate();
-  // ═══ keisan.site準拠・完全正確版 (2024-2030) ═══
-  const SETSU_TABLE_M = {
-    2024:[6,4,5,4,5,5,7,7,7,8,7,7],
-    2025:[5,3,5,4,5,5,7,7,7,8,7,7],
-    2026:[5,4,5,5,5,6,7,7,7,8,7,7],
-    2027:[6,4,6,5,5,6,7,7,8,8,7,7],
-    2028:[6,4,5,4,5,5,7,7,7,8,7,7],
-    2029:[5,3,5,4,5,5,7,7,7,8,7,7],
-    2030:[5,4,6,5,5,6,7,8,8,8,7,7],
-  };
   const TIGER_IDX_M = {'一白水星':7,'二黒土星':4,'三碧木星':1,'四緑木星':7,'五黄土星':4,'六白金星':1,'七赤金星':7,'八白土星':4,'九紫火星':1};
-  const setsu = SETSU_TABLE_M[y] || SETSU_TABLE_M[2026];
-  let mn = d >= setsu[m-1] ? m-1 : m-2;
+  let mn = d >= getSetsuDay(y, m) ? m-1 : m-2;
   if(mn<=0) mn+=12;
   const ti = TIGER_IDX_M[getYearBoard(now)];
   return KYUSEI_LIST[((ti-(mn-1))%9+9)%9];
@@ -813,9 +810,9 @@ let _candList = [];        // 当日の候補順（スコア順 → 被り回避
 let _candIdx  = 0;         // 現在の候補位置
 let _lastOpenShops = [];   // 被り回避のON/OFF切替時に候補順を組み直すための元データ
 
-function lfnDateKey(d) {
-  return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
-}
+// lfnDateKey はゼロ埋め版を後方で1つだけ定義する。
+// 旧実装はここに非ゼロ埋め版('2026-8-27')も定義しており、巻き上げで後勝ちになっていた。
+// 仮にこちらが勝つと lfnRecentTops の文字列比較（h.date >= from）が破綻する危険があった。
 function lfnHist() {
   try { const a = JSON.parse(localStorage.getItem(LFN_HIST_KEY) || '[]'); return Array.isArray(a) ? a : []; }
   catch (e) { return []; }
@@ -914,7 +911,9 @@ function mapImgError(img) {
   const box = document.createElement('div');
   box.style.cssText = 'padding:28px 16px;text-align:center;color:#999;font-size:0.85rem;'
                     + 'background:#f5f5f5;border-radius:12px;line-height:1.7;';
-  box.textContent = img.alt || 'マップ画像が見つかりません';
+  const file = (img.getAttribute('src') || '').replace('./', '');
+  box.textContent = 'マップ画像が見つかりません（' + file + ' をリポジトリにアップしてください）';
+  box.id = img.id + 'Err';
   if (img.parentNode) img.parentNode.insertBefore(box, img);
 }
 
@@ -936,6 +935,33 @@ function getKyuseiDayScore(now) {
 
   return { yearBoard, monthBoard, dayBoard: dayKyusei.name, yElem, mElem, dElem, yScore, mScore, dScore, total };
 }
+
+// ════════════════════════════════════════════════════════════
+//  日次定数のメモ化
+//  年盤・月盤・日盤・九星スコアは「日付」だけで決まる定数だが、
+//  旧実装は全38店のループ内から何度も呼び直していた。1回の占いで実測:
+//    getYearBoard 154回 / getMonthBoard 77回 / getDayKyusei 153回 /
+//    getKyuseiDayScore 77回  ＝ 同じ値を460回以上再計算していた。
+//  日付キーでメモ化して1日1回に畳む。値は不変なので結果は完全に同一。
+// ════════════════════════════════════════════════════════════
+function _dayKeyOf(d) {
+  return d.getFullYear() * 10000 + d.getMonth() * 100 + d.getDate();
+}
+function _memoByDay(fn) {
+  const cache = new Map();
+  return function (d) {
+    const k = _dayKeyOf(d);
+    if (cache.has(k)) return cache.get(k);
+    const v = fn(d);
+    cache.set(k, v);
+    return v;
+  };
+}
+getYearBoard      = _memoByDay(getYearBoard);
+getMonthBoard     = _memoByDay(getMonthBoard);
+getDayKyusei      = _memoByDay(getDayKyusei);
+getKyuseiDayScore = _memoByDay(getKyuseiDayScore);
+getAdditionalFortuneBonusFull = _memoByDay(getAdditionalFortuneBonusFull);
 
 
 // 風水スコア計算（本命星×年盤×月盤の三層相性を反映）
@@ -1076,56 +1102,9 @@ const SHOP_MAP_POS = {
 
 // ========== 占術計算エンジン ==========
 
-// 星座別基本運気
-const zodiacBase = {
-    '牡羊座':{base:45,element:'火',planet:'火星',luckyNum:9},
-    '牡牛座':{base:40,element:'土',planet:'金星',luckyNum:6},
-    '双子座':{base:43,element:'風',planet:'水星',luckyNum:5},
-    '蟹座':{base:38,element:'水',planet:'月',luckyNum:2},
-    '獅子座':{base:47,element:'火',planet:'太陽',luckyNum:1},
-    '乙女座':{base:41,element:'土',planet:'水星',luckyNum:5},
-    '天秤座':{base:42,element:'風',planet:'金星',luckyNum:6},
-    '蠍座':{base:44,element:'水',planet:'冥王星',luckyNum:8},
-    '射手座':{base:46,element:'火',planet:'木星',luckyNum:3},
-    '山羊座':{base:40,element:'土',planet:'土星',luckyNum:8},
-    '水瓶座':{base:43,element:'風',planet:'天王星',luckyNum:4},
-    '魚座':{base:39,element:'水',planet:'海王星',luckyNum:7}
-};
-
-// 血液型補正
-const bloodBonus = { 'A':1, 'B':2, 'O':1, 'AB':2 };
-
-// 干支補正
-const etoBonus = { '子':2,'丑':1,'寅':3,'卯':2,'辰':3,'巳':2,'午':3,'未':1,'申':2,'酉':3,'戌':2,'亥':2 };
-
-// 曜日別運気
-const dayBonus = [1,2,2,3,2,3,3]; // 日月火水木金土
-
-// 時間帯別運気
-function getHourScore(h) {
-    const scores = [3,2,2,2,2,4,6,7,7,7,8,8,9,9,8,8,7,9,9,9,8,8,7,5];
-    return scores[h] || 7;
-}
-
-// 九星気学：本命星
-// 九星気学 本命星: 桁和1桁→(11-sum)%9
-// 1993: 1+9+9+3=22→4 (11-4)%9=7 → 七赤金星 ✅
-function getKyusei(birthYear) {
-    let s = String(birthYear).split('').reduce((a,c)=>a+parseInt(c),0);
-    while(s >= 10) s = String(s).split('').reduce((a,c)=>a+parseInt(c),0);
-    const stars = ['九紫火星','一白水星','二黒土星','三碧木星','四緑木星','五黄土星','六白金星','七赤金星','八白土星'];
-    return stars[(11 - s) % 9];
-}
-
-// 数秘術：ライフパス
-function getLifePath(birthdate) {
-    const digits = birthdate.replace(/-/g,'').split('').map(Number);
-    let sum = digits.reduce((a,b)=>a+b,0);
-    while (sum > 9 && sum !== 11 && sum !== 22) {
-        sum = String(sum).split('').map(Number).reduce((a,b)=>a+b,0);
-    }
-    return sum;
-}
+// ※ zodiacBase / bloodBonus / etoBonus / dayBonus / getHourScore / getLifePath /
+//   getKyusei は定義のみで一度も参照されていない完全な死にコードだったため削除した。
+//   本命星は BIRTH_KYUSEI（ユーザー確認済みの固定値・七赤金星）を使う。
 
 // 四柱推命：日干
 // 四柱推命 日干: epochDays+17オフセット（lucky-girl検証済み）
@@ -1302,7 +1281,7 @@ function getAdditionalFortuneBonusFull(now) {
   return tsBonus+kyokuBonus+numBonus;
 }
 
-function calculateRestaurantScores(now) {
+function calculateRestaurantScores(now, mood) {
     const h = now.getHours();
     const moonPhase = getMoonPhase(now);
     const rokuyo = getRokuyo(now);
@@ -1385,17 +1364,44 @@ function calculateRestaurantScores(now) {
             dayName: dayKyuseiNow.name,
             rokuyoName: rokuyo
         };
-        return { ...shop, raw, isOpen, _bd };
+        return { ...shop, raw, isOpen, _bd, _moodHit: mood ? lfnMoodMatch(shop, mood) : false };
     });
 
-    // ── min-max正規化 → 60.0〜99.9にマッピング（全店ユニーク）──
-    const raws = rawScores.map(s => s.raw);
-    const minR = Math.min(...raws), maxR = Math.max(...raws);
+    // ── 気分フィルタ ──
+    // 旧実装は正規化「後」の score に +12 していたため、上限99.9を突破して
+    // 「111.9点」と表示されていた。正規化前の素点に加点して帯域内に収める。
+    // 加点は素点の幅に対する相対値にする。固定+12だと素点の幅（実測24〜50）次第で
+    // 効き目が24%〜50%とぶれ、日によって気分指定が効いたり効かなかったりしていた。
+    if (mood) {
+        const baseRaws   = rawScores.map(s => s.raw);
+        const baseSpread = (Math.max(...baseRaws) - Math.min(...baseRaws)) || 1;
+        const boost      = baseSpread * LFN_MOOD_STRENGTH;
+        rawScores.forEach(s => { if (s._moodHit) s.raw += boost; });
+    }
+
+    // ════════════════════════════════════════════════════════════
+    //  min-max正規化 → その日の総合運に応じた帯域へマッピング
+    //  旧実装は固定で 60.0〜99.9 に伸ばしていた。min-max正規化は全店共通の
+    //  加算値を打ち消すため、commonScore（六曜・月相・九星・通変星の最大40点）が
+    //  表示スコアに一切反映されず、大安・満月の日も仏滅の日も
+    //  必ず「1位=99.9点、最下位=60.0点」になっていた。
+    //  相対順位は変えずに、帯域の上端と幅をその日の運勢で動かす。
+    //    運が良い日ほど上端が高く、底上げもされる（最下位でも約74点）
+    //    運が悪い日は上端が下がる（1位でも約74点）
+    //  実測分布(730日)は commonScore 11〜37・中央値24 なので 12〜36 で正規化する。
+    // ════════════════════════════════════════════════════════════
+    const dayQ  = Math.max(0, Math.min(1, (commonScore - 12) / 24));   // 0=最低運 〜 1=最高運
+    const hi    = 74 + 25.9 * dayQ;          // 上端 74.0 〜 99.9
+    const lo    = hi - (14 + 12 * dayQ);     // 帯域幅 14 〜 26 点
+    const raws  = rawScores.map(s => s.raw);
+    const minR  = Math.min(...raws), maxR = Math.max(...raws);
     const range = maxR - minR || 1;
+    // 並べ替えは丸める前の素点で行う。表示スコアで並べると、帯域が狭い日に
+    // 0.1点へ丸めた同点が増え、本来は差がある店の順位が入れ替わってしまう。
     return rawScores.map(s => ({
         ...s,
-        score: Math.round((60 + (s.raw - minR) / range * 39.9) * 10) / 10
-    })).sort((a,b) => b.score - a.score);
+        score: Math.round((lo + (s.raw - minR) / range * (hi - lo)) * 10) / 10
+    })).sort((a,b) => b.raw - a.raw);
 }
 
 function generateReason(shop, rank, now) {
@@ -1466,21 +1472,26 @@ function updateTime() {
     const rokuyo    = getRokuyo(now);
     const lunar     = getLunarDate(now);
     const dayKan    = getDayKan(now);
-    const kyusei    = getKyusei(userData.birthdate.split('-')[0]);
+    const kds       = getKyuseiDayScore(now);   // 旧実装は同じ値を pills 内で2回別々に計算していた
     const pills = [
         { label: `六曜:${rokuyo}` },
         { label: `旧暦:${lunar.leap?'閏':''}${lunar.month}/${lunar.day}` },
         { label: `${moonPhase.emoji||'🌙'}${moonPhase.phase}` },
         { label: `日干:${dayKan}` },
         { label: '⭐本命:' + BIRTH_KYUSEI.slice(0,2) },
-        { label: (function(){ const k=getKyuseiDayScore(new Date()); const mr=k.mScore>=6?'大吉':k.mScore>=0?'吉':k.mScore>=-3?'注意':'凶'; return '月盤:'+k.monthBoard.slice(0,2)+'→'+mr; })() },
-        { label: (function(){ const k=getKyuseiDayScore(new Date()); const dr=k.dScore>=0?'吉':'注意'; return '日盤:'+k.dayBoard.slice(0,2)+'→'+dr; })() },
+        { label: '月盤:' + kds.monthBoard.slice(0,2) + '→' + (kds.mScore>=6?'大吉':kds.mScore>=0?'吉':kds.mScore>=-3?'注意':'凶') },
+        { label: '日盤:' + kds.dayBoard.slice(0,2) + '→' + (kds.dScore>=0?'吉':'注意') },
     ];
     const pillsEl = document.getElementById('fortune-pills');
     if(pillsEl) {
-        pillsEl.innerHTML = pills.map(p =>
-            `<span style="background:linear-gradient(135deg,#FF8C61,#FFB347);color:#fff;border-radius:20px;padding:4px 12px;font-size:0.8rem;font-weight:700;">${p.label}</span>`
-        ).join('');
+        // pills は日付が変わったときだけ中身が変わる。毎分 innerHTML を捨てて作り直さない。
+        const sig = pills.map(p => p.label).join('|');
+        if (pillsEl.dataset.sig !== sig) {
+            pillsEl.dataset.sig = sig;
+            pillsEl.innerHTML = pills.map(p =>
+                `<span style="background:linear-gradient(135deg,#FF8C61,#FFB347);color:#fff;border-radius:20px;padding:4px 12px;font-size:0.8rem;font-weight:700;">${p.label}</span>`
+            ).join('');
+        }
     }
 }
 updateTime();
@@ -1578,7 +1589,9 @@ const LFN_MOOD = {
     sweet:  { label: '🍰甘いもの', pat: /スイーツ|ケーキ|クレープ|アイス|パフェ|ドーナツ|パン|洋菓子|和菓子/ },
     cafe:   { label: '☕軽く',     pat: /カフェ|喫茶|ベーカリー|軽食|コーヒー|ティー/ }
 };
-const LFN_MOOD_BOOST = 12;      // 該当ジャンルへの加点
+// 該当ジャンルへの加点の強さ（素点の幅に対する割合）。
+// 0.75 なら「気分に合う店」が確実に上位へ来つつ、運気が突出した店は上に残れる。
+const LFN_MOOD_STRENGTH = 0.75;
 let _lfnMood = null;            // その場限り（localStorageに保存しない）
 
 function lfnMoodMatch(shop, key) {
@@ -1589,7 +1602,8 @@ function lfnMoodMatch(shop, key) {
 }
 function lfnSetMood(key) {
     _lfnMood = (_lfnMood === key) ? null : key;   // 再タップで解除
-    startFortune();
+    // 気分の切替は演出を挟まず即時に反映する（旧実装は毎タップ1800ms待たされた）
+    startFortune({ instant: true });
 }
 function lfnMoodChips() {
     return '<div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:10px 0 4px;">' +
@@ -1655,7 +1669,7 @@ function lfnPreview3(now) {
         const d = new Date(now.getTime() + i * 86400000);
         d.setHours(12, 0, 0, 0);                       // 昼どきを基準に見る
         let list;
-        try { list = calculateRestaurantScores(d).filter(x => x.isOpen); }
+        try { list = calculateRestaurantScores(d, _lfnMood).filter(x => x.isOpen); }
         catch (e) { list = []; }
         if (!list.length) { rows.push({ d: d, name: '—' }); continue; }
         // 実際の履歴＋この予測内で既に1位になった店を避ける
@@ -1687,20 +1701,26 @@ function lfnOpenBadge(shop, now) {
 }
 
 // ========== 占い実行 ==========
-function startFortune() {
-    document.getElementById('loading').classList.add('show');
-    document.getElementById('result').classList.remove('show');
-    
-    setTimeout(() => {
+// 演出用の待ち時間。旧実装は毎回1800msを固定で挟んでいた。
+// 実計算は数msで終わるので、初回だけ演出を見せ、再占い・気分切替は即時にする。
+const LFN_SPIN_MS = 700;
+let _fortuneTimer = null;   // 連打で複数のタイマーが積み上がるのを防ぐ
+
+function startFortune(opts) {
+    const instant = !!(opts && opts.instant);
+    // 連打対策: 実行中のタイマーがあれば捨てる（旧実装は多重描画＋履歴の多重記録が起きた）
+    if (_fortuneTimer !== null) { clearTimeout(_fortuneTimer); _fortuneTimer = null; }
+
+    if (!instant) {
+        document.getElementById('loading').classList.add('show');
+        document.getElementById('result').classList.remove('show');
+    }
+
+    const run = () => {
+        _fortuneTimer = null;
         const now = new Date();
-        let ranked = calculateRestaurantScores(now);
-        // [v2] 2-A 気分フィルタ：該当ジャンルに +12 して再ランキング（その場限り）
-        if (_lfnMood) {
-            ranked = ranked.map(x => {
-                const hit = lfnMoodMatch(x, _lfnMood);
-                return { ...x, score: Math.round((x.score + (hit ? LFN_MOOD_BOOST : 0)) * 10) / 10, _moodHit: hit };
-            }).sort((a, b) => b.score - a.score);
-        }
+        // 気分フィルタは正規化前に加点されるので、ここでは再ソート不要
+        const ranked = calculateRestaurantScores(now, _lfnMood);
         // [v2] 1-A/1-C 直近3日の1位を外し、僅差なら日別シードで入替
         const openShops   = lfnApplyRotation(ranked.filter(s => s.isOpen), now);
         const closedShops = ranked.filter(s => !s.isOpen);
@@ -1739,7 +1759,6 @@ function startFortune() {
         
         // ── 占術データ ──
         const dayKan  = getDayKan(now);
-        const kyusei  = getKyusei(userData.birthdate.split('-')[0]);
         html += `
         <div class="summary" style="margin-top:12px;">
             <div class="summary-title">🔮 本日の占術データ</div>
@@ -1779,7 +1798,7 @@ function startFortune() {
                             <div class="shop-location">${shop.floor} ${shop.area} ／ ${shop.genre} ／ 営業:${shop.hours.open}:00〜${shop.hours.close}:00</div>
                         </div>
                     </div>
-                    <div class="score-badge" style="background:${scoreColor};">運気スコア：${shop.score.toFixed(1)}点${shop._moodHit?' <span style="font-size:0.72rem;">(気分+'+LFN_MOOD_BOOST+')</span>':''}</div>
+                    <div class="score-badge" style="background:${scoreColor};">運気スコア：${shop.score.toFixed(1)}点${shop._moodHit?' <span style="font-size:0.72rem;">(気分マッチ)</span>':''}</div>
                     <div class="reason">${generateReason(shop, i+1, now)}</div>
                     ${i===0 ? lfnReasonChips(shop, now) : ''}
                     <div class="tags">${shop.tags.map(t => `<span class="tag">#${t}</span>`).join('')}</div>
@@ -1820,35 +1839,59 @@ function startFortune() {
         lfnRenderFeatured();   // DOM挿入後に候補表示と履歴記録を行う
         document.getElementById('loading').classList.remove('show');
         document.getElementById('result').classList.add('show');
-    }, 1800);
+    };
+
+    if (instant) run();
+    else _fortuneTimer = setTimeout(run, LFN_SPIN_MS);
 }
 
 // ========== フロアマップ機能 ==========
+// 表示中の店舗と階は変数で保持する。
+// 旧実装は店名を mapShopName の textContent に書いてから '📍 ' を剥がして読み戻しており、
+// 見出しの装飾を変えるだけでマーカーが消える壊れやすい作りだった。
+let _mapShop  = null;    // 表示中の店名
+let _mapFloor = '1F';    // 表示中の階
+let _mapPrevFocus = null;
+
 function openMap(shopName) {
+    _mapShop = shopName;
+    _mapPrevFocus = document.activeElement;
     const pos = SHOP_MAP_POS[shopName];
     const modal = document.getElementById('mapModal');
     document.getElementById('mapShopName').textContent = '\u{1F4CD} ' + shopName;
     document.getElementById('mapMarkerLabel').textContent = shopName;
-    const floor = pos ? pos.floor : '1F';
     modal.classList.add('show');
-    switchMapFloor(floor, pos);
+    modal.setAttribute('aria-hidden', 'false');
+    switchMapFloor(pos ? pos.floor : '1F');
+    const closeBtn = modal.querySelector('.map-close');
+    if (closeBtn) closeBtn.focus();
     setTimeout(scrollToMarker, 400);
 }
-function switchMapFloor(floor, pos) {
+function switchMapFloor(floor) {
+    _mapFloor = floor;
     const img1F = document.getElementById('mapImg1F');
     const img2F = document.getElementById('mapImg2F');
-    document.getElementById('tab1F').className = 'map-floor-tab' + (floor==='1F'?' active':'');
-    document.getElementById('tab2F').className = 'map-floor-tab' + (floor==='2F'?' active':'');
-    img1F.style.display = floor==='1F'?'block':'none';
-    img2F.style.display = floor==='2F'?'block':'none';
-    if(!pos){ const name = document.getElementById('mapShopName').textContent.replace('\u{1F4CD} ',''); pos = SHOP_MAP_POS[name]; }
-    placeMarker(pos, floor);
+    const tab1F = document.getElementById('tab1F');
+    const tab2F = document.getElementById('tab2F');
+    tab1F.className = 'map-floor-tab' + (floor==='1F'?' active':'');
+    tab2F.className = 'map-floor-tab' + (floor==='2F'?' active':'');
+    tab1F.setAttribute('aria-selected', floor==='1F');
+    tab2F.setAttribute('aria-selected', floor==='2F');
+    // 読み込みに失敗した画像は代替表示に差し替え済みなので、階を切り替えても再表示しない
+    [[img1F,'1F'],[img2F,'2F']].forEach(function(p){
+        const el = p[0], fl = p[1];
+        const err = document.getElementById(el.id + 'Err');
+        const active = (floor === fl);
+        el.style.display = (active && el.dataset.errShown !== '1') ? 'block' : 'none';
+        if (err) err.style.display = active ? 'block' : 'none';
+    });
+    placeMarker();
 }
-function placeMarker(pos, floor) {
+function placeMarker() {
     const marker = document.getElementById('mapMarker');
-    const wrap   = document.getElementById('mapWrap');
-    if(!pos || pos.floor !== floor){ marker.style.display='none'; return; }
-    const imgEl = floor==='1F' ? document.getElementById('mapImg1F') : document.getElementById('mapImg2F');
+    const pos = _mapShop ? SHOP_MAP_POS[_mapShop] : null;
+    if(!pos || pos.floor !== _mapFloor){ marker.style.display='none'; return; }
+    const imgEl = document.getElementById(_mapFloor==='1F' ? 'mapImg1F' : 'mapImg2F');
     const iw = imgEl.clientWidth  || 400;
     const ih = imgEl.clientHeight || (iw*848/1200);
     marker.style.left    = (iw * pos.x / 100) + 'px';
@@ -1863,33 +1906,50 @@ function scrollToMarker() {
     const my = parseFloat(marker.style.top)||0;
     wrap.scrollTo({ left: Math.max(0,mx-wrap.clientWidth/2), top: Math.max(0,my-wrap.clientHeight/2), behavior:'smooth' });
 }
-function closeMap(){ document.getElementById('mapModal').classList.remove('show'); }
+function closeMap(){
+    const modal = document.getElementById('mapModal');
+    modal.classList.remove('show');
+    modal.setAttribute('aria-hidden', 'true');
+    if (_mapPrevFocus && _mapPrevFocus.focus) _mapPrevFocus.focus();
+    _mapPrevFocus = null;
+}
+// 画像の読み込み完了時に配置し直す（lazy読み込みのため開いた直後は寸法が0のことがある）
 ['mapImg1F','mapImg2F'].forEach(function(id){
-    var el = document.getElementById(id);
+    const el = document.getElementById(id);
     if(el) el.addEventListener('load', function(){
-        var name = document.getElementById('mapShopName').textContent.replace('\u{1F4CD} ','');
-        var pos2 = SHOP_MAP_POS[name];
-        var fl = id==='mapImg1F' ? '1F' : '2F';
-        if(pos2 && pos2.floor===fl && this.style.display!=='none') placeMarker(pos2,fl);
+        const fl = id==='mapImg1F' ? '1F' : '2F';
+        if(_mapFloor === fl) placeMarker();
     });
+});
+// 回転・リサイズでマーカーがずれる不具合の修正。
+// マーカーはpx指定なので、画像の表示幅が変わったら再計算が要る。
+let _mapResizeTimer = null;
+window.addEventListener('resize', function(){
+    if (!document.getElementById('mapModal').classList.contains('show')) return;
+    clearTimeout(_mapResizeTimer);
+    _mapResizeTimer = setTimeout(placeMarker, 120);
+});
+// Escapeで閉じる
+document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape' && document.getElementById('mapModal').classList.contains('show')) closeMap();
 });
 
 </script>
 
 <!-- フロアマップモーダル -->
-<div class="map-modal" id="mapModal" onclick="if(event.target===this)closeMap()">
+<div class="map-modal" id="mapModal" role="dialog" aria-modal="true" aria-labelledby="mapShopName" aria-hidden="true" onclick="if(event.target===this)closeMap()">
   <div class="map-box">
     <div class="map-header">
       <span id="mapShopName">店舗マップ</span>
-      <button class="map-close" onclick="closeMap()">✕</button>
+      <button class="map-close" onclick="closeMap()" aria-label="マップを閉じる">✕</button>
     </div>
-    <div class="map-floor-tabs">
-      <button class="map-floor-tab" id="tab1F" onclick="switchMapFloor('1F')">1F</button>
-      <button class="map-floor-tab" id="tab2F" onclick="switchMapFloor('2F')">2F</button>
+    <div class="map-floor-tabs" role="tablist">
+      <button class="map-floor-tab" id="tab1F" role="tab" aria-selected="false" onclick="switchMapFloor('1F')">1F</button>
+      <button class="map-floor-tab" id="tab2F" role="tab" aria-selected="false" onclick="switchMapFloor('2F')">2F</button>
     </div>
     <div class="map-wrap" id="mapWrap">
-      <img id="mapImg1F" class="map-img" src="./map_1f.webp" loading="lazy" decoding="async" alt="マップ画像が見つかりません（map_1f.webpをリポジトリにアップしてください）" onerror="mapImgError(this)" alt="1Fフロアマップ" style="display:none">
-      <img id="mapImg2F" class="map-img" src="./map_2f.webp" loading="lazy" decoding="async" alt="マップ画像が見つかりません（map_2f.webpをリポジトリにアップしてください）" onerror="mapImgError(this)" alt="2Fフロアマップ" style="display:none">
+      <img id="mapImg1F" class="map-img" src="./map_1f.webp" width="1200" height="848" loading="lazy" decoding="async" onerror="mapImgError(this)" alt="1Fフロアマップ" style="display:none">
+      <img id="mapImg2F" class="map-img" src="./map_2f.webp" width="1200" height="848" loading="lazy" decoding="async" onerror="mapImgError(this)" alt="2Fフロアマップ" style="display:none">
       <div class="map-marker" id="mapMarker" style="display:none">
         <div style="display:flex;flex-direction:column;align-items:center;">
           <div class="map-marker-dot"></div>

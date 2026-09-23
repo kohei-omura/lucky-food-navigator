@@ -7,7 +7,8 @@
     <meta name="description" content="イオンモール宮崎 開運グルメガイド｜六曜・月相・九星気学・風水であなたに最適な店を占う">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700;900&family=M+PLUS+Rounded+1c:wght@400;700;900&display=swap" rel="stylesheet">
+    <!-- crossorigin: CORS で取得してSWがキャッシュできるようにする（無いと不透明応答になりオフラインでフォントが消える） -->
+    <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700;900&family=M+PLUS+Rounded+1c:wght@400;700;900&display=swap" rel="stylesheet" crossorigin>
     <!-- PWA -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#FF6B6B">
@@ -35,6 +36,9 @@
             color: var(--text);
             min-height: 100vh;
             padding: 20px;
+            /* viewport-fit=cover 指定時にノッチ・ホームバーへ被らないようにする */
+            padding: max(20px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right))
+                     max(20px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
             position: relative;
             overflow-x: hidden;
         }
@@ -236,10 +240,16 @@
             to { opacity: 1; transform: translateX(0); }
         }
         
-        .result-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 32px rgba(0,0,0,0.16);
+        @media (hover: hover) {
+            .result-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 12px 32px rgba(0,0,0,0.16);
+            }
         }
+        /* 即時再描画（気分切替など）ではスライドインを再生しない */
+        .result.no-anim, .result.no-anim .result-card { animation: none; }
+        /* 折りたたみ内・画面外のカードは描画を後回しにする（スクロール開始までレイアウト計算を省く） */
+        .more-rank .result-card, details .result-card { content-visibility: auto; contain-intrinsic-size: auto 260px; }
         
         .rank {
             display: inline-block;
@@ -478,7 +488,17 @@
             display: inline-flex;
             align-items: center;
             gap: 4px;
+            /* <button> の既定スタイルを打ち消して、見た目は従来の店名テキストのままにする */
+            background: none;
+            border: 0;
+            padding: 0;
+            font: inherit;
+            font-size: 1.3rem;
+            font-weight: 900;
+            color: var(--text);
+            text-align: left;
         }
+        .shop-name-link:focus-visible { outline: 3px solid #FF8C61; outline-offset: 2px; border-radius: 6px; }
         .shop-name-link:hover { text-decoration: underline; }
         .map-pin-icon { font-size: 0.85em; }
 
@@ -542,7 +562,7 @@
 // ========== イオンモール宮崎 全飲食店データ ==========
 const restaurants = [
     // ── 1F サウスモール ──
-    { name:'スターバックスコーヒー イオンモール宮崎 South Mall 1階店', floor:'1F', area:'サウスモール', genre:'カフェ', element:'風', hours:{open:10,close:21}, emoji:'☕', tags:['スタバ','カフェ','フラペチーノ','ラテ'] },
+    { name:'スターバックスコーヒー イオンモール宮崎 South Mall 1階店', floor:'1F', area:'サウスモール', genre:'カフェ', element:'風', hours:{open:10,close:21}, emoji:'☕', food:'フラペチーノ', tags:['スタバ','カフェ','フラペチーノ','ラテ'] },
     // ── 1F ノースモール ──
     { name:'レモネード by レモニカ', floor:'1F', area:'ノースモール', genre:'レモネード', element:'水', hours:{open:10,close:21}, emoji:'🍋', tags:['レモネード','ドリンク','スイーツ','映え'] },
     // ── 1F サウスモール ──
@@ -556,23 +576,23 @@ const restaurants = [
     { name:'ポポラマーマ', floor:'1F', area:'レストラン街', genre:'パスタ', element:'風', hours:{open:11,close:22}, emoji:'🍝', tags:['生パスタ','イタリアン','できたて','ランチ'] },
     { name:'紅虎餃子房', floor:'1F', area:'レストラン街', genre:'中華料理', element:'火', hours:{open:11,close:22}, emoji:'🥢', tags:['餃子','中華家庭料理','中華','宮崎'] },
     { name:'築地食堂源ちゃん 銀座惣菜店', floor:'1F', area:'レストラン街', genre:'和食・海鮮', element:'水', hours:{open:10,close:21}, emoji:'🐟', tags:['海鮮丼','鯛ごま丼','だし茶漬け','和食'] },
-    { name:'タリーズコーヒー', floor:'1F', area:'レストラン街', genre:'カフェ', element:'風', hours:{open:10,close:21}, emoji:'☕', tags:['タリーズ','カフェ','コーヒー','軽食'] },
+    { name:'タリーズコーヒー', floor:'1F', area:'レストラン街', genre:'カフェ', element:'風', hours:{open:10,close:21}, emoji:'☕', food:'コーヒー', tags:['タリーズ','カフェ','コーヒー','軽食'] },
     { name:'ゴンチャ', floor:'1F', area:'レストラン街', genre:'タピオカ・ティー', element:'水', hours:{open:10,close:21}, emoji:'🧋', tags:['タピオカ','アジアンティー','ドリンク','映え'] },
     { name:'乃が美 はなれ', floor:'1F', area:'レストラン街', genre:'食パン', element:'木', hours:{open:10,close:21}, emoji:'🍞', tags:['高級食パン','ふわふわ','ベーカリー','テイクアウト'] },
     { name:'いきなりステーキ', floor:'1F', area:'レストラン街', genre:'ステーキ', element:'火', hours:{open:11,close:22}, emoji:'🥩', tags:['ステーキ','肉','ランチ','ドリンクバー'] },
     { name:'寿しまどか', floor:'1F', area:'レストラン街', genre:'回転寿司', element:'水', hours:{open:11,close:22}, emoji:'🍣', tags:['寿司','海鮮','回転寿司','ランチ'] },
     { name:'しゃぶしゃぶ 美山', floor:'1F', area:'レストラン街', genre:'しゃぶしゃぶ', element:'水', hours:{open:11,close:22}, emoji:'🍲', tags:['しゃぶしゃぶ','鍋','和食','ランチ'] },
-    { name:'くいしんぼう', floor:'1F', area:'レストラン街', genre:'和食・洋食', element:'土', hours:{open:11,close:22}, emoji:'🍽️', tags:['和食','洋食','定食','ランチ'] },
+    { name:'くいしんぼう', floor:'1F', area:'レストラン街', genre:'和食・洋食', element:'土', hours:{open:11,close:22}, emoji:'🍽️', food:'定食', tags:['和食','洋食','定食','ランチ'] },
     { name:'山本のハンバーグ', floor:'1F', area:'レストラン街', genre:'ハンバーグ', element:'土', hours:{open:11,close:22}, emoji:'🍔', tags:['ハンバーグ','デミグラス','洋食','ランチ'] },
     { name:'ビスヌ', floor:'1F', area:'レストラン街', genre:'インド料理', element:'火', hours:{open:11,close:22}, emoji:'🍛', tags:['インドカレー','ナン','スパイス','レストラン'] },
     { name:'とんかつ 濱かつ', floor:'1F', area:'レストラン街', genre:'とんかつ', element:'土', hours:{open:11,close:22}, emoji:'🍱', tags:['とんかつ','ヒレカツ','ロースカツ','定食'] },
     { name:'元祖 辛麺屋桝元', floor:'1F', area:'レストラン街', genre:'ラーメン', element:'火', hours:{open:11,close:22}, emoji:'🌶️', tags:['辛麺','宮崎','辛い','ラーメン'] },
-    { name:'五穀', floor:'1F', area:'レストラン街', genre:'和食', element:'木', hours:{open:11,close:22}, emoji:'🍚', tags:['和食','定食','ご飯','バランス'] },
+    { name:'五穀', floor:'1F', area:'レストラン街', genre:'和食', element:'木', hours:{open:11,close:22}, emoji:'🍚', food:'定食', tags:['和食','定食','ご飯','バランス'] },
     { name:'北海道キッチン YOSHIMI', floor:'1F', area:'レストラン街', genre:'レストラン', element:'土', hours:{open:11,close:22}, emoji:'🍴', tags:['ローストビーフ丼','北海道グルメ','ランチ','ステーキ'] },
     // ── 2F サウスモール ──
-    { name:'シアトルズベストコーヒー', floor:'2F', area:'サウスモール', genre:'カフェダイニング', element:'風', hours:{open:10,close:21}, emoji:'☕', tags:['カフェ','ダイニング','コーヒー','軽食'] },
+    { name:'シアトルズベストコーヒー', floor:'2F', area:'サウスモール', genre:'カフェダイニング', element:'風', hours:{open:10,close:21}, emoji:'☕', food:'コーヒー', tags:['カフェ','ダイニング','コーヒー','軽食'] },
     // ── 2F ノースモール ──
-    { name:'スターバックス コーヒー イオンモール宮崎 North Mall 2階店', floor:'2F', area:'ノースモール', genre:'カフェ', element:'風', hours:{open:10,close:21}, emoji:'☕', tags:['スタバ','カフェ','フラペチーノ','ラテ'] },
+    { name:'スターバックス コーヒー イオンモール宮崎 North Mall 2階店', floor:'2F', area:'ノースモール', genre:'カフェ', element:'風', hours:{open:10,close:21}, emoji:'☕', food:'フラペチーノ', tags:['スタバ','カフェ','フラペチーノ','ラテ'] },
     // ── 2F Food Forest ──
     { name:'ぼっけもん', floor:'2F', area:'Food Forest', genre:'餃子・鶏料理', element:'火', hours:{open:10,close:21}, emoji:'🥟', tags:['餃子串','チキン定食','宮崎','テイクアウト'] },
     { name:'丸亀製麺', floor:'2F', area:'Food Forest', genre:'うどん', element:'水', hours:{open:10,close:21}, emoji:'🍜', tags:['讃岐うどん','天ぷら','いなり','セルフ'] },
@@ -580,7 +600,7 @@ const restaurants = [
     { name:'サーティワンアイスクリーム', floor:'2F', area:'Food Forest', genre:'アイスクリーム', element:'水', hours:{open:10,close:21}, emoji:'🍦', tags:['アイス','フレーバー','スイーツ','ダブル'] },
     { name:'ペッパーランチ', floor:'2F', area:'Food Forest', genre:'ステーキ・鉄板', element:'火', hours:{open:10,close:21}, emoji:'🥩', tags:['ペッパーライス','ステーキ','鉄板','ランチ'] },
     { name:'築地銀だこ', floor:'2F', area:'Food Forest', genre:'たこ焼き', element:'火', hours:{open:10,close:21}, emoji:'🐙', tags:['たこ焼き','餃子','宮崎','テイクアウト'] },
-    { name:'ケンタッキーフライドチキン', floor:'2F', area:'Food Forest', genre:'フライドチキン', element:'火', hours:{open:10,close:21}, emoji:'🍗', tags:['チキン','フライドチキン','ファストフード'] },
+    { name:'ケンタッキーフライドチキン', floor:'2F', area:'Food Forest', genre:'フライドチキン', element:'火', hours:{open:10,close:21}, emoji:'🍗', food:'フライドチキン', tags:['チキン','フライドチキン','ファストフード'] },
     { name:'ミスタードーナツ', floor:'2F', area:'Food Forest', genre:'ドーナツ', element:'風', hours:{open:10,close:21}, emoji:'🍩', tags:['ドーナツ','コーヒー','スイーツ','軽食'] },
     { name:'Dipper Dan', floor:'2F', area:'Food Forest', genre:'クレープ', element:'水', hours:{open:10,close:21}, emoji:'🥞', tags:['クレープ','タピオカ','スイーツ','テイクアウト'] },
     { name:'サブウェイ', floor:'2F', area:'Food Forest', genre:'サンドイッチ', element:'風', hours:{open:10,close:21}, emoji:'🥖', tags:['サンドイッチ','ヘルシー','軽食','カスタム'] },
@@ -588,6 +608,71 @@ const restaurants = [
     { name:'ビビン亭', floor:'2F', area:'Food Forest', genre:'韓国料理', element:'火', hours:{open:10,close:21}, emoji:'🥘', tags:['石窯ビビンバ','丼もの','韓国','ランチ'] },
     { name:'もくてきち', floor:'2F', area:'Food Forest', genre:'ラーメン', element:'火', hours:{open:10,close:21}, emoji:'🍜', tags:['豚骨ラーメン','生卵','宮崎','あっさり'] },
 ];
+
+// ════════════════════════════════════════════════════════════
+//  食事カテゴリ（時間帯×ジャンル適合の判定用）
+//  旧実装は genre の文字列だけで「定食」「スイーツ」などを探していたが、
+//  そのキーワードを genre に持つ店がほぼ無く、実測で次のようになっていた:
+//    15〜18時: アイス・ドーナツ・チョコ・タピオカ・レモネードが3点（ステーキと同点）。満点はクレープだけ
+//    11〜15時: とんかつ・天ぷら・寿司・定食の店が5点（アイスやチョコと同点）
+//    18〜22時: しゃぶしゃぶ・寿司・中華・インド料理が4点
+//  genre・tags・店名から食事カテゴリを割り当て、時間帯ごとの適合点を表で引く。
+//  点数の幅（0〜14）は旧実装と同じなので、スコア全体の比重は変わらない。
+// ════════════════════════════════════════════════════════════
+const MEAL_CATS = {
+    cafe:    /カフェ|珈琲|コーヒー|喫茶/,
+    bakery:  /パン|サンド|ベーカリー/,
+    sweets:  /スイーツ|アイス|クレープ|ドーナツ|チョコ|ケーキ|パフェ|ソフトクリーム/,
+    drink:   /ドリンク(?!バー)|タピオカ|ティー|レモネード|スムージー/,   // 「ドリンクバー」はステーキ店の付帯なので除外
+    snack:   /たこ焼き|フライドチキン|ファストフード|ハンバーガー|ポテト|餃子串/,
+    noodle:  /ラーメン|うどん|そば|麺|パスタ/,
+    washoku: /和食|定食|寿司|海鮮|天ぷら|とんかつ|しゃぶしゃぶ|丼/,
+    dinner:  /ステーキ|ハンバーグ|焼肉|中華|インド|韓国|鉄板|レストラン|洋食|ダイニング/,
+};
+//            朝(7-11) 昼(11-15) おやつ(15-18) 夕(18-22) 深夜
+const MEAL_TIME_PT = {
+    cafe:    [14,  8, 12,  5, 6],
+    bakery:  [10,  8,  6,  3, 2],
+    sweets:  [ 4,  5, 14,  6, 2],
+    drink:   [ 6,  6, 13,  6, 2],
+    snack:   [ 3,  9,  8,  6, 4],
+    noodle:  [ 3, 13,  4, 13, 4],
+    washoku: [ 3, 14,  4, 12, 2],
+    dinner:  [ 3, 11,  3, 14, 2],
+};
+function mealSlot(h) {
+    if (h >= 7  && h < 11) return 0;
+    if (h >= 11 && h < 15) return 1;
+    if (h >= 15 && h < 18) return 2;
+    if (h >= 18 && h < 22) return 3;
+    return 4;
+}
+// 店ごとに不変な値（カテゴリ・店名ハッシュ）は読み込み時に1回だけ計算する
+restaurants.forEach(function (shop) {
+    const hay = shop.genre + ' ' + shop.name + ' ' + shop.tags.join(' ');
+    shop.cats = Object.keys(MEAL_CATS).filter(function (c) { return MEAL_CATS[c].test(hay); });
+    shop.hash = shop.name.split('').reduce(function (a, cc) { return (a * 31 + cc.charCodeAt(0)) & 0x7FFFFFFF; }, 0);
+});
+
+// 日盤エレメント × 店舗エレメント (-3〜+4)
+const SHOP_ELEM_COMPAT = {
+    '火':{'火':4,'土':2,'水':-3,'金':-2,'木':3,'風':1},
+    '水':{'水':4,'金':3,'木':2,'火':-3,'土':-2,'風':1},
+    '木':{'木':4,'水':3,'火':2,'金':-3,'土':-2,'風':1},
+    '金':{'金':4,'土':3,'水':2,'木':-3,'火':-2,'風':1},
+    '土':{'土':4,'火':3,'金':2,'水':-3,'木':-2,'風':1},
+    '風':{'風':4,'木':2,'火':2,'水':1,'土':1,'金':1}
+};
+function getTimePt(shop, h) {
+    const slot = mealSlot(h);
+    let pt = 2;                                    // どのカテゴリにも当たらない店の下限
+    for (const c of shop.cats) pt = Math.max(pt, MEAL_TIME_PT[c][slot]);
+    // 名物ランチ（旧実装から継承）
+    if (slot === 1 && (shop.name.includes('丸亀') || shop.name.includes('源ちゃん'))) pt = Math.min(14, pt + 2);
+    // 深夜帯はマクドナルドを最優先（旧実装から継承）
+    if (slot === 4 && shop.name.includes('マクドナルド')) pt = 14;
+    return pt;
+}
 
 // ========== ユーザー情報（晃平さん専用） ==========
 const userData = {
@@ -614,7 +699,7 @@ const SHOP_GEO = {
     'スターバックスコーヒー イオンモール宮崎 South Mall 1階店':{dir:'南',ang:167.0,dist:0.961},   // [1023]
     'レモネード by レモニカ':{dir:'西',ang:267.0,dist:0.812},   // [103-A]
     'ゴディバ':{dir:'南',ang:161.4,dist:1.0},   // [1031]
-    'カフェ イタリアン・トマト':{dir:'東南',ang:135.9,dist:0.663},   // [137-C]
+    'カフェ イタリアン・トマト':{dir:'東南',ang:151.8,dist:0.646},   // [137-C] ※座標修正に合わせて再計算（旧 135.9°/0.663 は隣の137-Eの値）
     'くだものかふぇ':{dir:'西',ang:259.6,dist:0.7},   // [162]
     'コメダ珈琲店':{dir:'南西',ang:241.7,dist:0.527},   // [170-2]
     '天ぷら一代':{dir:'南西',ang:232.6,dist:0.484},   // [171]
@@ -824,7 +909,7 @@ function lfnSetAvoid(on) {
   try { localStorage.setItem(LFN_AVOID_KEY, on ? '1' : '0'); } catch (e) {}
 }
 function lfnPushHist(shopName, foodName) {
-  const key = lfnDateKey(new Date());
+  const key = lfnDateKey(lfnNow());
   const h = lfnHist().filter(x => x && x.date !== key);   // 同日分は最新で置き換える
   h.unshift({ date: key, shop: shopName, food: foodName });
   try { localStorage.setItem(LFN_HIST_KEY, JSON.stringify(h.slice(0, LFN_HIST_MAX))); } catch (e) {}
@@ -833,7 +918,7 @@ function lfnPushHist(shopName, foodName) {
 function lfnRecentShops() {
   const keys = [];
   for (let i = 1; i <= LFN_AVOID_DAYS; i++) {
-    const d = new Date(); d.setDate(d.getDate() - i); keys.push(lfnDateKey(d));
+    const d = lfnNow(); d.setDate(d.getDate() - i); keys.push(lfnDateKey(d));
   }
   return lfnHist().filter(x => x && keys.indexOf(x.date) >= 0).map(x => x.shop);
 }
@@ -846,12 +931,14 @@ function lfnBuildCandidates(openShops) {
   if (!fresh.length) return openShops.slice();   // 全店が被りなら降格しても意味がないので無効
   return fresh.concat(used);
 }
-function lfnFoodOf(shop) { return (shop.tags && shop.tags[0]) || shop.genre || ''; }
+// 代表メニュー。先頭タグが店名そのもの（「スタバ」「タリーズ」）やジャンル名（「カフェ」「和食」）の店は
+// 「タリーズコーヒーのタリーズ」のような表示になるため、データ側の food を優先する。
+function lfnFoodOf(shop) { return shop.food || (shop.tags && shop.tags[0]) || shop.genre || ''; }
 
 function lfnShareText() {
   const s = _candList[_candIdx];
   if (!s) return '';
-  const now = new Date();
+  const now = lfnNow();
   const dir = SHOP_DIRECTION[s.name] || '中央';
   return '🍽 今日のラッキーフード ' + (now.getMonth() + 1) + '/' + now.getDate()
        + ' ' + getRokuyo(now) + '\n' + s.name + 'の' + lfnFoodOf(s) + '（方位:' + dir + '）';
@@ -899,6 +986,10 @@ function lfnRenderFeatured() {
   const nameEl = document.getElementById('featuredShop');
   const navEl  = document.getElementById('candNav');
   if (nameEl) nameEl.innerHTML = s.emoji + ' ' + s.name + 'の' + lfnFoodOf(s);
+  // 旧実装は被り回避や「別の候補」でランキング🥇以外の店を出しても「運気相性が最高です！」と表示していた
+  const noteEl = document.getElementById('featuredNote');
+  if (noteEl) noteEl.textContent = (!_rankTopName || s.name === _rankTopName)
+      ? 'との運気相性が最高です！' : 'がおすすめです！';
   if (navEl)  navEl.textContent = '第' + (_candIdx + 1) + '候補/' + _candList.length + '件中';
   lfnPushHist(s.name, lfnFoodOf(s));
 }
@@ -991,68 +1082,47 @@ const CENTER_DIST = 0.10;
 
 function angDiff(a, b) { const d = Math.abs(a - b) % 360; return d > 180 ? 360 - d : d; }
 
+// 九星ごとの吉方位（旧実装は getFengShuiScore の中で店ごと＝1回の占いで152回作り直していた）
+const BOARD_LUCKY_DIR = [
+    ['南','東南'],   // 一白水星
+    ['北東','西'],   // 二黒土星
+    ['東','北'],     // 三碧木星
+    ['東南','南'],   // 四緑木星
+    ['中央'],        // 五黄土星（中宮＝定位。特定の吉方位を持たない）
+    ['北西','西'],   // 六白金星
+    ['西','北西'],   // 七赤金星
+    ['北東','南西'], // 八白土星
+    ['南','東'],     // 九紫火星
+];
+// [v2] 月盤・年盤由来は50%に減衰し、日盤由来を150%に増幅する。
+//      これで方位スコアが「月内固定」から「日替わり」に主導権が移る。
+const MB_COEF = 0.5;   // 月盤・年盤由来
+const DB_COEF = 1.5;   // 日盤由来
+
+// ── 方位スコア（-3〜10）: 8方位の一致判定ではなく、吉方位との「角度差」で連続評価する。
+//    旧実装は 10/5/3/-3 の4値しか取らず、C smart 起点だと方位が南・南西に集中して
+//    38店中34店が同点になり、五黄土星の月は全店同点で方位が完全に無効化していた。
+//    連続化により全店に差がつき、旧実装の水準（一致=10 / 直角=約3 / 正反対=-3）は保たれる。
+//    月盤用と日盤用で同じ式を2回コピーしていたので1つにまとめた（計算結果は同一）。
+function dirScoreFor(geo, luckyDirs) {
+    if (!geo) return 3;
+    if (luckyDirs.indexOf('中央') >= 0) return 10 - geo.dist * 7;   // 五黄土星: 近場ほど安全（至近10 → 最遠3）
+    if (geo.dist < CENTER_DIST) return 5;                            // 原点至近は方位が定まらない
+    let d = 180;
+    for (const L of luckyDirs) {
+        const c = DIR_ANGLE[L];
+        if (c !== undefined) d = Math.min(d, angDiff(geo.ang, c));
+    }
+    return 10 - (d / 180) * 13;                                      // 0°→10 / 90°→3.5 / 180°→-3
+}
+
 function getFengShuiScore(shopName, now) {
     const geo = SHOP_GEO[shopName];
     const kds = getKyuseiDayScore(now);
     const kyuseiBonus = kds.total;                       // -6〜+10（全店共通・順位には影響しない）
-    const monthBoardIdx = KYUSEI_LIST.indexOf(kds.monthBoard);
-    const BOARD_LUCKY_DIR = [
-        ['南','東南'],   // 一白水星
-        ['北東','西'],   // 二黒土星
-        ['東','北'],     // 三碧木星
-        ['東南','南'],   // 四緑木星
-        ['中央'],        // 五黄土星（中宮＝定位。特定の吉方位を持たない）
-        ['北西','西'],   // 六白金星
-        ['西','北西'],   // 七赤金星
-        ['北東','南西'], // 八白土星
-        ['南','東'],     // 九紫火星
-    ];
-    const luckyDirs = BOARD_LUCKY_DIR[monthBoardIdx] || ['中央'];
-
-    // ── 方位スコア（-3〜10）: 8方位の一致判定ではなく、吉方位との「角度差」で連続評価する。
-    //    旧実装は 10/5/3/-3 の4値しか取らず、C smart 起点だと方位が南・南西に集中して
-    //    38店中34店が同点になり、五黄土星の月は全店同点で方位が完全に無効化していた。
-    //    連続化により全店に差がつき、旧実装の水準（一致=10 / 直角=約3 / 正反対=-3）は保たれる。
-    let dirScore;
-    if (!geo) {
-        dirScore = 3;
-    } else if (luckyDirs.indexOf('中央') >= 0) {
-        // 五黄土星の月: 中央＝原点(C smart)。遠出ほど利が薄く、近場ほど安全と読む
-        dirScore = 10 - geo.dist * 7;                     // 至近10 → 最遠3
-    } else if (geo.dist < CENTER_DIST) {
-        dirScore = 5;                                     // 原点至近は方位が定まらない
-    } else {
-        let d = 180;
-        for (const L of luckyDirs) {
-            const c = DIR_ANGLE[L];
-            if (c !== undefined) d = Math.min(d, angDiff(geo.ang, c));
-        }
-        dirScore = 10 - (d / 180) * 13;                   // 0°→10 / 90°→3.5 / 180°→-3
-    }
-    // [v2] 月盤・年盤由来は50%に減衰し、日盤由来を150%に増幅する。
-    //      判定ロジック（角度差評価）は一切変えず、最終加算時の係数のみ調整。
-    //      これで方位スコアが「月内固定」から「日替わり」に主導権が移る。
-    const MB_COEF = 0.5;   // 月盤・年盤由来
-    const DB_COEF = 1.5;   // 日盤由来
-    // 日盤の吉方位で同じ角度差評価を行う（判定式は上と同一）
-    const dayBoardIdx = KYUSEI_LIST.indexOf(getDayKyusei(now).name);
-    const dayDirs = BOARD_LUCKY_DIR[dayBoardIdx] || ['中央'];
-    let dayDirScore;
-    if (!geo) {
-        dayDirScore = 3;
-    } else if (dayDirs.indexOf('中央') >= 0) {
-        dayDirScore = 10 - geo.dist * 7;
-    } else if (geo.dist < CENTER_DIST) {
-        dayDirScore = 5;
-    } else {
-        let dd = 180;
-        for (const L of dayDirs) {
-            const c = DIR_ANGLE[L];
-            if (c !== undefined) dd = Math.min(dd, angDiff(geo.ang, c));
-        }
-        dayDirScore = 10 - (dd / 180) * 13;
-    }
-    const dirMix = (dirScore * MB_COEF + dayDirScore * DB_COEF) / (MB_COEF + DB_COEF);
+    const monthDirs = BOARD_LUCKY_DIR[KYUSEI_LIST.indexOf(kds.monthBoard)] || ['中央'];
+    const dayDirs   = BOARD_LUCKY_DIR[KYUSEI_LIST.indexOf(kds.dayBoard)]   || ['中央'];
+    const dirMix = (dirScoreFor(geo, monthDirs) * MB_COEF + dirScoreFor(geo, dayDirs) * DB_COEF) / (MB_COEF + DB_COEF);
     return dirMix * FENG_W + kyuseiBonus * (1 - FENG_W);
 }
 
@@ -1063,7 +1133,7 @@ const SHOP_MAP_POS = {
   'スターバックスコーヒー イオンモール宮崎 South Mall 1階店': {floor:'1F',x:62.8,y:73.7},   // [1023]
   'レモネード by レモニカ': {floor:'1F',x:31.7,y:35.4},   // [103-A]
   'ゴディバ': {floor:'1F',x:65.9,y:74.2},   // [1031]
-  'カフェ イタリアン・トマト': {floor:'1F',x:70.2,y:54.0},   // [137-C]
+  'カフェ イタリアン・トマト': {floor:'1F',x:65.5,y:58.0},   // [137-C] 旧(70.2,54.0)は隣の「137-E coming soon」を指していた
   'くだものかふぇ': {floor:'1F',x:35.4,y:39.0},   // [162]
   'コメダ珈琲店': {floor:'1F',x:42.2,y:44.3},   // [170-2]
   '天ぷら一代': {floor:'1F',x:44.6,y:46.2},   // [171]
@@ -1118,7 +1188,24 @@ function getDayKan(now) {
 // 六曜（2026年正確データ）
 // ===== 天文計算エンジン（旧暦・六曜・月相）StarWalk/AJNET基準・閏月対応・全年対応 =====
 // 朔(新月)と視太陽黄経から旧暦を算出し、(旧暦月+旧暦日)%6 で六曜を求める。2026実データ検証済み。
-function _toJD(d){ return d.getTime()/86400000 + 2440587.5; }
+// ════════════════════════════════════════════════════════════
+//  時刻の基準は常に日本時間（JST）
+//  旧実装は、旧暦・六曜・月相は「絶対時刻→JST」で計算する一方、日干・九星・節入り・営業時間・履歴は
+//  「端末のローカル日付」で計算していた。端末のタイムゾーンが日本以外（旅行中・自動設定の誤り等）だと
+//  両者の「今日」が食い違い、さらに旧暦のキャッシュ（ローカル日付がキー）に別の日の値が入って、
+//  その日最初に開いた時刻次第で旧暦・六曜が1日ずれることがあった。
+//  lfnNow() は「JSTの壁時計の年月日時分」をローカル値として持つ Date を返し、
+//  _toJD はローカル値をJSTとして解釈する。端末がJSTなら両方とも従来と完全に同じ値になる。
+// ════════════════════════════════════════════════════════════
+function lfnNow() {
+  const j = new Date(Date.now() + 9 * 3600000);   // getUTC* が JST の壁時計になる
+  return new Date(j.getUTCFullYear(), j.getUTCMonth(), j.getUTCDate(),
+                  j.getUTCHours(), j.getUTCMinutes(), j.getUTCSeconds(), j.getUTCMilliseconds());
+}
+function _toJD(d){
+  return Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), d.getHours(), d.getMinutes(), d.getSeconds(), d.getMilliseconds())
+         / 86400000 + 2440587.5 - 9 / 24;
+}
 function _newMoonTD(k){
   const T=k/1236.85, rad=Math.PI/180;
   let jde=2451550.09766 + 29.530588861*k + 0.00015437*T*T - 0.000000150*T*T*T + 0.00000000073*T*T*T*T;
@@ -1252,7 +1339,7 @@ function getKyoku_F() {
   const mingStem=STEMS_F[((BASE[yearStem]||0)+mingIdx)%10];
   return KYOKU_NUM_F[KYOKU_ELEM_F[mingStem]||'木']||3;
 }
-const BIRTH_KYOKU_F = getKyoku_F(); // 3局（固定）
+const BIRTH_KYOKU_F = getKyoku_F(); // 命宮=甲寅(納音 大渓水) → 水二局（旧コメントの「3局」は誤記）
 
 function getNumerologyDayBonus_F(date) {
   const LIFE_PATH=4; // 1993/4/14→4
@@ -1262,19 +1349,15 @@ function getNumerologyDayBonus_F(date) {
   return {9:5,8:4,7:4,6:4,3:4,11:6,22:6,33:6}[s]||2;
 }
 
-function getDayPillarStem_F(date) {
-  const STEMS_L=['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
-  const epochDays=Math.floor(Date.UTC(date.getFullYear(),date.getMonth(),date.getDate())/86400000);
-  return STEMS_L[((epochDays+17)%10+10)%10];
-}
+// 日干は getDayKan と同一の式だったため統合（旧 getDayPillarStem_F）
 
 function getAdditionalFortuneBonusFull(now) {
   // 通変星ボーナス（日干×本命乙の通変星）
-  const dStem=getDayPillarStem_F(now);
+  const dStem=getDayKan(now);
   const ts={'印綬':8,'正官':7,'正財':6,'食神':5,'比肩':4,'偏印':4,'偏官':3,'劫財':2,'傷官':2,'偏財':2};
   const tsuhen=getTsuhensei_F('乙',dStem);
   const tsBonus=ts[tsuhen]||3;
-  // 紫微斗数局数ボーナス（固定: 火6局→最高）
+  // 紫微斗数局数ボーナス（本命は水二局 → 2点。旧コメントの「火6局→最高」は誤記）
   const kyokuBonus={6:8,5:6,4:5,3:3,2:2}[BIRTH_KYOKU_F]||3;
   // 個人日数ボーナス
   const numBonus=getNumerologyDayBonus_F(now);
@@ -1294,6 +1377,12 @@ function calculateRestaurantScores(now, mood) {
     const fortunePt = Math.min(16, getAdditionalFortuneBonusFull(now));
     const commonScore = rokuyoPt + moonPt + kyuseiPt + fortunePt; // 0〜40
 
+    // ── 全店共通の日次値（旧実装はループ内で店ごとに作り直していた）──
+    const dayKyuseiNow = getDayKyusei(now);
+    const dayCompat = SHOP_ELEM_COMPAT[dayKyuseiNow.elem] || {};
+    const dailySeed = now.getFullYear()*10000+(now.getMonth()+1)*100+now.getDate();
+    const moonAge = moonPhase.age||0;
+
     // ── 各店舗スコア計算 ──
     const rawScores = restaurants.map(shop => {
         const isOpen = h >= shop.hours.open && h < shop.hours.close;
@@ -1301,41 +1390,13 @@ function calculateRestaurantScores(now, mood) {
         // 1. エレメント相性 (0〜12)
         const elemPt = Math.max(0, getElementCompatibility(userData.element, shop.element) + 6);
 
-        // 2. 時間帯×ジャンル適合 (0〜14)
-        let timePt = 0;
-        if (h >= 7 && h < 11) {
-            if (shop.genre.includes('カフェ')) timePt=14;
-            else if (shop.genre.includes('パン')||shop.genre.includes('サンド')) timePt=10;
-            else timePt=3;
-
-        } else if (h >= 11 && h < 15) {
-            if (shop.genre.includes('定食')||shop.genre.includes('海鮮')) timePt=14;
-            else if (shop.genre.includes('うどん')||shop.genre.includes('ラーメン')) timePt=12;
-            else if (shop.genre.includes('カフェ')||shop.genre.includes('洋食')) timePt=8;
-            else timePt=5;
-            if (shop.name.includes('丸亀')||shop.name.includes('源ちゃん')) timePt=Math.min(14,timePt+2);
-        } else if (h >= 15 && h < 18) {
-            if (shop.genre.includes('スイーツ')||shop.genre.includes('クレープ')) timePt=14;
-            else if (shop.genre.includes('カフェ')) timePt=12;
-            else if (shop.genre.includes('フルーツ')) timePt=10;
-            else timePt=3;
-        } else if (h >= 18 && h < 22) {
-            if (shop.genre.includes('ラーメン')||shop.genre.includes('焼肉')||shop.genre.includes('ステー')) timePt=14;
-            else if (shop.genre.includes('レストラン')||shop.genre.includes('和食')) timePt=12;
-            else if (shop.genre.includes('居酒屋')||shop.genre.includes('鍋')) timePt=10;
-            else timePt=4;
-        } else {
-            if (shop.name.includes('マクドナルド')) timePt=14;
-            else if (shop.genre.includes('カフェ')) timePt=6;
-            else timePt=2;
-        }
+        // 2. 時間帯×ジャンル適合 (2〜14)
+        const timePt = getTimePt(shop, h);
 
         // 3. 店舗固有sin（全店ユニーク float）
         //    占術で差がつかない店同士を毎日入れ替えるための変化装置。
         //    UNIQ_W で振幅を絞り、順位の主導権を占術要素に戻している。
-        const shopHash = shop.name.split("").reduce((a,cc) => ((a*31 + cc.charCodeAt(0)) & 0x7FFFFFFF), 0);
-        const dailySeed = now.getFullYear()*10000+(now.getMonth()+1)*100+now.getDate();
-        const moonAge = moonPhase.age||0;
+        const shopHash = shop.hash;
         const sig1 = Math.sin(shopHash*0.7853981 + dailySeed*0.137)*10;
         const sig2 = Math.sin(shopHash*1.2345678 + dailySeed*0.071)*8;
         const sig3 = Math.sin(shopHash*2.7182818  + moonAge*0.15 + dailySeed*0.031)*5;
@@ -1345,10 +1406,7 @@ function calculateRestaurantScores(now, mood) {
         const fengPt = getFengShuiScore(shop.name, now);
 
         // 5. 日盤×店舗エレメント (-3〜+4)
-        const dayKyuseiNow = getDayKyusei(now);
-        const SHOP_ELEM_COMPAT = {'火':{'火':4,'土':2,'水':-3,'金':-2,'木':3,'風':1},'水':{'水':4,'金':3,'木':2,'火':-3,'土':-2,'風':1},'木':{'木':4,'水':3,'火':2,'金':-3,'土':-2,'風':1},'金':{'金':4,'土':3,'水':2,'木':-3,'火':-2,'風':1},'土':{'土':4,'火':3,'金':2,'水':-3,'木':-2,'風':1},'風':{'風':4,'木':2,'火':2,'水':1,'土':1,'金':1}};
-        const dElem = dayKyuseiNow.elem;
-        const dayShopPt = (SHOP_ELEM_COMPAT[dElem]&&SHOP_ELEM_COMPAT[dElem][shop.element])||0;
+        const dayShopPt = dayCompat[shop.element] || 0;
 
         const raw = commonScore + elemPt*W_ELEM + timePt*W_TIME + shopUnique
                   + fengPt*W_FENG + dayShopPt*W_DAY;
@@ -1398,10 +1456,10 @@ function calculateRestaurantScores(now, mood) {
     const range = maxR - minR || 1;
     // 並べ替えは丸める前の素点で行う。表示スコアで並べると、帯域が狭い日に
     // 0.1点へ丸めた同点が増え、本来は差がある店の順位が入れ替わってしまう。
-    return rawScores.map(s => ({
-        ...s,
-        score: Math.round((lo + (s.raw - minR) / range * (hi - lo)) * 10) / 10
-    })).sort((a,b) => b.raw - a.raw);
+    return rawScores.map(s => {
+        const norm = (s.raw - minR) / range;     // 0〜1（僅差判定に使う）
+        return { ...s, norm, score: Math.round((lo + norm * (hi - lo)) * 10) / 10 };
+    }).sort((a,b) => b.raw - a.raw);
 }
 
 function generateReason(shop, rank, now) {
@@ -1415,9 +1473,12 @@ function generateReason(shop, rank, now) {
         '火':'火のエレメント同士で運気が共鳴します',
         '土':'土のエレメントが安定感をもたらします',
         '風':'風のエレメントが軽やかな運気を運びます',
-        '水':'水のエレメントが浄化と癒しをもたらします'
+        '水':'水のエレメントが浄化と癒しをもたらします',
+        // 旧実装は木・金が無く、五穀・乃が美・ゴディバの理由文が「。」から始まっていた
+        '木':'木のエレメントが成長と活力を育みます',
+        '金':'金のエレメントが豊かさと実りを引き寄せます'
     };
-    reasons.push(elementMsg[shop.element]);
+    if (elementMsg[shop.element]) reasons.push(elementMsg[shop.element]);
     
     // 時間帯
     if (h >= 7 && h < 11) reasons.push('朝の運気が高まる時間帯です');
@@ -1461,7 +1522,7 @@ function generateReason(shop, rank, now) {
 
 // ========== UI更新 ==========
 function updateTime() {
-    const now = new Date();
+    const now = lfnNow();
     const m = now.getMonth()+1, d = now.getDate();
     const h = String(now.getHours()).padStart(2,'0');
     const min = String(now.getMinutes()).padStart(2,'0');
@@ -1494,8 +1555,23 @@ function updateTime() {
         }
     }
 }
-updateTime();
-setInterval(updateTime, 60000);
+// 時計は「分の変わり目」に合わせて更新する。
+// 旧実装は読み込み時刻から60秒ごとだったため、表示が最大59秒遅れていた。
+function scheduleClock() {
+    updateTime();
+    const now = lfnNow();
+    setTimeout(scheduleClock, 60000 - (now.getSeconds() * 1000 + now.getMilliseconds()) + 50);
+}
+scheduleClock();
+
+// PWA をバックグラウンドから復帰したとき:
+//   ・タイマーが止まっていた間の時計を即座に直す
+//   ・日付をまたいでいたら、昨日の占い結果を出したままにせず自動で占い直す
+document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState !== 'visible') return;
+    updateTime();
+    if (_lastFortuneDay && _lastFortuneDay !== lfnDateKey(lfnNow())) startFortune({ instant: true });
+});
 
 
 // ════════════════════════════════════════════════════════════
@@ -1516,7 +1592,8 @@ function lfnDateKey(d) {
     return d.getFullYear() + '-' + m + '-' + day;
 }
 function lfnTopHist() {
-    try { return JSON.parse(localStorage.getItem(LFN_TOP_KEY) || '[]'); }
+    // 配列以外（壊れた値・手動編集）が入っていると後続の filter で落ちるため検証する
+    try { const a = JSON.parse(localStorage.getItem(LFN_TOP_KEY) || '[]'); return Array.isArray(a) ? a : []; }
     catch (e) { return []; }
 }
 function lfnRecentTops(now, days) {
@@ -1542,32 +1619,42 @@ function lfnDaySeed(now) {
     return now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
 }
 
+// 僅差入替のしきい値（帯域に対する割合）。旧実装は固定帯域39.9点に対して1.5点だった。
+// 帯域が日ごとに変わるようになったので、同じ比率（約3.8%）で判定して挙動を保つ。
+const LFN_TIE_RATIO = 1.5 / 39.9;
+
 // [v2] 並びに対してローテーションと僅差入替を適用した配列を返す
-//   ・直近3日の1位は先頭に来ないよう後方へ送る
-//   ・1位と2位の差が1.5点未満なら日別シードで入替（同日内は常に同じ）
-function lfnApplyRotation(list, now) {
+//   ・直近 LFN_TOP_DAYS 日の1位は先頭に来ないよう後方へ送る
+//   ・1位と2位が僅差なら日別シードで入替（同日内は常に同じ）
+//   extraRecent: 3日予測で「予測上の1位」を履歴とみなすための追加分。
+//   旧実装は予測側だけ②の入替を省いた別ロジックで、実測で約8%の日に予測と実際の1位が食い違っていた。
+function lfnApplyRotation(list, now, extraRecent) {
     if (!list || list.length < 2) return (list || []).slice();
     let arr = list.slice();
-    const recent = lfnRecentTops(now, LFN_TOP_DAYS);
+    const recent = lfnRecentTops(now, LFN_TOP_DAYS).concat(extraRecent || []);
 
-    // ① 直近3日の1位は先頭に置かない（候補からは消さず2位以下へ）
+    // ① 直近の1位は先頭に置かない（候補からは消さず2位以下へ）
     if (recent.length) {
         const fresh = arr.filter(x => recent.indexOf(x.name) < 0);
-        if (fresh.length) {
+        if (fresh.length && fresh[0] !== arr[0]) {
             const head = fresh[0];
-            arr = [head].concat(arr.filter(x => x !== head));
+            // 順番を譲った店に目印を付ける（🥇より点数が高い🥈が出る理由を表示するため）
+            arr = [head].concat(arr.filter(x => x !== head).map(x =>
+                recent.indexOf(x.name) >= 0 && x.raw > head.raw ? { ...x, _yielded: true } : x));
         }
         // 全店が直近1位なら降格しても意味がないのでそのまま
     }
 
-    // ② 僅差（1.5点未満）なら日別シードで1位/2位を入替（同日内は常に同じ）
-    if (arr.length >= 2) {
-        const a0 = (arr[0].score != null) ? arr[0].score : 0;
-        const b0 = (arr[1].score != null) ? arr[1].score : 0;
-        if (Math.abs(a0 - b0) < 1.5 && recent.indexOf(arr[1].name) < 0) {
-            const seed = lfnDaySeed(now);
-            const h = (seed * 2654435761) % 2147483647;
-            if ((h % 2) === 1) { const t = arr[0]; arr[0] = arr[1]; arr[1] = t; }
+    // ② 僅差なら日別シードで1位/2位を入替（同日内は常に同じ）
+    if (arr.length >= 2 && recent.indexOf(arr[1].name) < 0) {
+        const a0 = arr[0].norm, b0 = arr[1].norm;
+        const close = (a0 != null && b0 != null) ? Math.abs(a0 - b0) < LFN_TIE_RATIO
+                                                 : Math.abs((arr[0].score || 0) - (arr[1].score || 0)) < 1.5;
+        if (close) {
+            // 旧実装の seed*2654435761 は 2^53 を超えて精度が落ちていた。32bit整数演算で混ぜる
+            let h = Math.imul(lfnDaySeed(now), 2654435761) >>> 0;
+            h = Math.imul(h ^ (h >>> 15), 2246822519) >>> 0;
+            if (h & 1) { const t = arr[0]; arr[0] = arr[1]; arr[1] = t; }
         }
     }
     return arr;
@@ -1584,7 +1671,8 @@ function lfnApplyRotation(list, now) {
 // ════════════════════════════════════════════════════════════
 const LFN_MOOD = {
     hearty: { label: '🍖がっつり', pat: /焼肉|ステーキ|とんかつ|カツ|中華|丼|カレー|ハンバーグ|肉|餃子/ },
-    light:  { label: '🥗さっぱり', pat: /和食|寿司|鮨|海鮮|サラダ|定食|そば処|野菜/ },
+    // 旧パターンは「定食」を含み、タグに定食を持つ とんかつ・天ぷら・チキン定食 まで「さっぱり」扱いになっていた
+    light:  { label: '🥗さっぱり', pat: /和食|寿司|鮨|海鮮|サラダ|そば処|野菜|しゃぶしゃぶ|茶漬け|ヘルシー|バランス/ },
     noodle: { label: '🍜麺',       pat: /ラーメン|うどん|そば|パスタ|イタリアン|麺/ },
     sweet:  { label: '🍰甘いもの', pat: /スイーツ|ケーキ|クレープ|アイス|パフェ|ドーナツ|パン|洋菓子|和菓子/ },
     cafe:   { label: '☕軽く',     pat: /カフェ|喫茶|ベーカリー|軽食|コーヒー|ティー/ }
@@ -1672,9 +1760,8 @@ function lfnPreview3(now) {
         try { list = calculateRestaurantScores(d, _lfnMood).filter(x => x.isOpen); }
         catch (e) { list = []; }
         if (!list.length) { rows.push({ d: d, name: '—' }); continue; }
-        // 実際の履歴＋この予測内で既に1位になった店を避ける
-        const avoid = lfnRecentTops(d, LFN_TOP_DAYS).concat(virtualTops);
-        let pick = list.find(x => avoid.indexOf(x.name) < 0) || list[0];
+        // 実際に占ったときと同じ lfnApplyRotation で選ぶ（予測内で1位になった店も履歴とみなす）
+        const pick = lfnApplyRotation(list, d, virtualTops)[0];
         virtualTops.push(pick.name);
         if (virtualTops.length > LFN_TOP_DAYS) virtualTops.shift();
         rows.push({ d: d, name: pick.name });
@@ -1700,6 +1787,65 @@ function lfnOpenBadge(shop, now) {
         'border-radius:999px;background:#F2F4F8;color:#8894a6;font-weight:700;">' + txt + '</span>';
 }
 
+// ========== ランキングのカード描画 ==========
+const LFN_TOP_VISIBLE = 10;      // 常時表示する順位の数
+let _rankTopName   = null;       // ランキング🥇の店（おすすめ文言の切替に使う）
+let _lastFortuneDay = null;      // 最後に占った日（日付が変わったら自動で占い直す）
+
+// 開店前・閉店後に占ったときの案内
+function lfnClosedNote(now) {
+    const h = now.getHours();
+    const firstOpen = Math.min.apply(null, restaurants.map(r => r.hours.open));
+    const lastClose = Math.max.apply(null, restaurants.map(r => r.hours.close));
+    if (h < firstOpen) return '⏰ まだ開店前です（' + firstOpen + ':00〜）。開店後に占うと「今すぐ行ける店」が出ます';
+    if (h >= lastClose) return '🌙 本日の営業は終了しました（〜' + lastClose + ':00）';
+    return '';
+}
+
+// 1店舗分のカード。営業中/営業時間外で共通のテンプレートを使う（旧実装は2箇所にコピーがあった）
+function lfnShopCard(shop, i, now, isOpenList) {
+    const tags = `<div class="tags">${shop.tags.map(t => `<span class="tag">#${t}</span>`).join('')}</div>`;
+    // 店名は <button> にして、キーボード（Tab→Enter）でもマップを開けるようにする
+    const nameBtn = `<button type="button" class="shop-name shop-name-link" onclick="openMap(this.dataset.name)" data-name="${shop.name}" aria-label="${shop.name}のフロアマップを開く"><span class="map-pin-icon">📍</span>${shop.name}</button>`;
+    if (!isOpenList) {
+        const scoreColor = shop.score >= 80 ? '#aaa' : shop.score >= 70 ? '#bbb' : '#ccc';
+        return `
+                <div class="result-card" style="opacity:0.7;">
+                    <div class="shop-header">
+                        <div class="rank" style="font-size:0.75rem;color:#999;">営業外</div>
+                        <div class="shop-icon">${shop.emoji}</div>
+                        <div class="shop-info">
+                            ${nameBtn}
+                            <div class="shop-location">${shop.floor} ${shop.area} ／ 営業:${shop.hours.open}:00〜${shop.hours.close}:00${lfnOpenBadge(shop, now)}</div>
+                        </div>
+                    </div>
+                    <div class="score-badge" style="background:${scoreColor};">運気スコア：${shop.score.toFixed(1)}点</div>
+                    ${tags}
+                </div>`;
+    }
+    const medals = ['🥇','🥈','🥉'];
+    const medal = i < 3 ? medals[i] : `${i+1}位`;
+    const scoreColor = shop.score >= 90 ? '#FF6B6B' : shop.score >= 80 ? '#FF8C61' : shop.score >= 70 ? '#FFB347' : '#aaa';
+    const yielded = shop._yielded
+        ? '<div style="font-size:0.72rem;color:#8894a6;margin:-6px 0 10px;">🔄 最近1位になったため、今日は順番を譲っています</div>' : '';
+    return `
+                <div class="result-card">
+                    <div class="shop-header">
+                        <div class="rank">${medal}</div>
+                        <div class="shop-icon">${shop.emoji}</div>
+                        <div class="shop-info">
+                            ${nameBtn}
+                            <div class="shop-location">${shop.floor} ${shop.area} ／ ${shop.genre} ／ 営業:${shop.hours.open}:00〜${shop.hours.close}:00</div>
+                        </div>
+                    </div>
+                    <div class="score-badge" style="background:${scoreColor};">運気スコア：${shop.score.toFixed(1)}点${shop._moodHit?' <span style="font-size:0.72rem;">(気分マッチ)</span>':''}</div>
+                    ${yielded}
+                    <div class="reason">${generateReason(shop, i+1, now)}</div>
+                    ${i===0 ? lfnReasonChips(shop, now) : ''}
+                    ${tags}
+                </div>`;
+}
+
 // ========== 占い実行 ==========
 // 演出用の待ち時間。旧実装は毎回1800msを固定で挟んでいた。
 // 実計算は数msで終わるので、初回だけ演出を見せ、再占い・気分切替は即時にする。
@@ -1718,7 +1864,7 @@ function startFortune(opts) {
 
     const run = () => {
         _fortuneTimer = null;
-        const now = new Date();
+        const now = lfnNow();
         // 気分フィルタは正規化前に加点されるので、ここでは再ソート不要
         const ranked = calculateRestaurantScores(now, _lfnMood);
         // [v2] 1-A/1-C 直近3日の1位を外し、僅差なら日別シードで入替
@@ -1730,9 +1876,11 @@ function startFortune(opts) {
         const moonPhase = getMoonPhase(now);
         const lunar = getLunarDate(now);
         const top1 = openShops[0] || ranked[0];
-        if (top1) lfnRecordTop(now, top1.name);   // [v2] 当日の1位を記録（同日重複なし）
-        const medals = ['🥇','🥈','🥉'];
-
+        // [v2] 当日の1位を記録（同日重複なし）。
+        // 旧実装は開店前（全店閉店中）でも記録していたため、朝に一度開くと閉店中の店が「今日の1位」になり、
+        // 昼に占った本当の1位が記録されず、翌日以降のローテーションが誤った履歴で動いていた。
+        // 気分フィルタ中の1位も「その場限りの好み」なので記録しない。
+        if (openShops.length && !_lfnMood) lfnRecordTop(now, openShops[0].name);
         // 候補順を構築（スコア順 → 被り回避で降格。表示ランキングには影響させない）
         _lastOpenShops = openShops.length ? openShops.slice() : ranked.slice();
         _candList = lfnBuildCandidates(_lastOpenShops);
@@ -1744,7 +1892,8 @@ function startFortune(opts) {
             <div class="summary-text">
                 ${rokuyo}の${moonPhase.emoji||'🌙'}${moonPhase.phase}（旧暦${lunar.leap?'閏':''}${lunar.month}月${lunar.day}日・月齢${moonPhase.age}日）。<br>
                 ${userData.zodiac}・B型・酉年の晃平さんは今日、<br>
-                <strong id="featuredShop" style="font-size:1.1em;">${top1.name}</strong><br>との運気相性が最高です！
+                <strong id="featuredShop" style="font-size:1.1em;">${top1.name}</strong><br><span id="featuredNote">との運気相性が最高です！</span>
+                ${openShops.length ? '' : '<div style="margin-top:6px;font-size:0.8rem;color:#999;">' + lfnClosedNote(now) + '</div>'}
             </div>
             <div style="display:flex;gap:8px;justify-content:center;margin-top:12px;flex-wrap:wrap;">
                 <button type="button" onclick="lfnCycleCandidate()" style="border:none;border-radius:999px;padding:9px 16px;background:#fff;color:#FF6B6B;font-weight:900;font-size:0.85rem;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.08);">🎲 別の候補</button>
@@ -1783,29 +1932,22 @@ function startFortune(opts) {
         </div>`;
         
         // ── 全店舗ランキング（営業中） ──
+        // 上位 LFN_TOP_VISIBLE 件だけを常時表示し、残りは折りたたむ。
+        // 旧実装は38枚すべてを展開しており、結果画面の高さが約18,000pxになっていた。
         if (openShops.length > 0) {
             html += '<div class="summary-title" style="text-align:center;margin:16px 0 8px;font-size:1rem;">🍽️ 今すぐ行ける店ランキング</div>';
-            openShops.forEach((shop, i) => {
-                const medal = i < 3 ? medals[i] : `${i+1}位`;
-                const scoreColor = shop.score >= 90 ? '#FF6B6B' : shop.score >= 80 ? '#FF8C61' : shop.score >= 70 ? '#FFB347' : '#aaa';
-                html += `
-                <div class="result-card">
-                    <div class="shop-header">
-                        <div class="rank">${medal}</div>
-                        <div class="shop-icon">${shop.emoji}</div>
-                        <div class="shop-info">
-                            <div class="shop-name shop-name-link" onclick="openMap(this.dataset.name)" data-name="${shop.name}"><span class="map-pin-icon">📍</span>${shop.name}</div>
-                            <div class="shop-location">${shop.floor} ${shop.area} ／ ${shop.genre} ／ 営業:${shop.hours.open}:00〜${shop.hours.close}:00</div>
-                        </div>
-                    </div>
-                    <div class="score-badge" style="background:${scoreColor};">運気スコア：${shop.score.toFixed(1)}点${shop._moodHit?' <span style="font-size:0.72rem;">(気分マッチ)</span>':''}</div>
-                    <div class="reason">${generateReason(shop, i+1, now)}</div>
-                    ${i===0 ? lfnReasonChips(shop, now) : ''}
-                    <div class="tags">${shop.tags.map(t => `<span class="tag">#${t}</span>`).join('')}</div>
-                </div>`;
-            });
+            openShops.slice(0, LFN_TOP_VISIBLE).forEach((shop, i) => { html += lfnShopCard(shop, i, now, true); });
+            const rest = openShops.slice(LFN_TOP_VISIBLE);
+            if (rest.length) {
+                html += `<details class="more-rank" style="margin-top:4px;">
+                    <summary style="cursor:pointer;background:#fff;border-radius:12px;padding:10px 16px;font-size:0.85rem;color:#FF6B6B;font-weight:700;text-align:center;">
+                        ${LFN_TOP_VISIBLE + 1}位〜${openShops.length}位を見る（${rest.length}店）
+                    </summary>`;
+                rest.forEach((shop, j) => { html += lfnShopCard(shop, LFN_TOP_VISIBLE + j, now, true); });
+                html += '</details>';
+            }
         }
-        
+
         // ── 営業時間外の店舗（折りたたみ表示） ──
         if (closedShops.length > 0) {
             html += `
@@ -1813,32 +1955,22 @@ function startFortune(opts) {
                 <summary style="cursor:pointer;background:#f5f5f5;border-radius:12px;padding:10px 16px;font-size:0.85rem;color:#999;">
                     ⏰ 現在営業時間外の店舗（${closedShops.length}店）
                 </summary>`;
-            closedShops.forEach((shop, i) => {
-                const scoreColor = shop.score >= 80 ? '#aaa' : shop.score >= 70 ? '#bbb' : '#ccc';
-                html += `
-                <div class="result-card" style="opacity:0.7;">
-                    <div class="shop-header">
-                        <div class="rank" style="font-size:0.85rem;">${i+1}位</div>
-                        <div class="shop-icon">${shop.emoji}</div>
-                        <div class="shop-info">
-                            <div class="shop-name shop-name-link" onclick="openMap(this.dataset.name)" data-name="${shop.name}"><span class="map-pin-icon">📍</span>${shop.name}</div>
-                            <div class="shop-location">${shop.floor} ${shop.area} ／ 営業:${shop.hours.open}:00〜${shop.hours.close}:00${lfnOpenBadge(shop, now)}</div>
-                        </div>
-                    </div>
-                    <div class="score-badge" style="background:${scoreColor};">運気スコア：${shop.score.toFixed(1)}点</div>
-                    <div class="tags">${shop.tags.map(t => `<span class="tag">#${t}</span>`).join('')}</div>
-                </div>`;
-            });
+            closedShops.forEach((shop, i) => { html += lfnShopCard(shop, i, now, false); });
             html += '</details>';
         }
-        
+
         html += lfnPreview3(now);          // [v2] 2-C 向こう3日の1位予測
         html += '<button class="back-btn" onclick="startFortune()">🔮 再占い</button>';
         
-        document.getElementById('result').innerHTML = html;
+        const resultEl = document.getElementById('result');
+        _rankTopName = openShops.length ? openShops[0].name : null;
+        _lastFortuneDay = lfnDateKey(now);
+        // 気分切替などの即時再描画では、38枚のカードが毎回スライドインし直してちらつかないようにする
+        resultEl.classList.toggle('no-anim', instant);
+        resultEl.innerHTML = html;
         lfnRenderFeatured();   // DOM挿入後に候補表示と履歴記録を行う
         document.getElementById('loading').classList.remove('show');
-        document.getElementById('result').classList.add('show');
+        resultEl.classList.add('show');
     };
 
     if (instant) run();

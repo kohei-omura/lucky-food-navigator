@@ -1614,6 +1614,46 @@ function lfnRecordTop(now, name) {
     try { localStorage.setItem(LFN_TOP_KEY, JSON.stringify(hist)); } catch (e) {}
 }
 
+// ════════════════════════════════════════════════════════════
+//  表示順位の履歴（上位 LFN_SHOWN_TOP 位まで）と、最近出た店への軽いペナルティ
+//  旧ローテーションは「1位だけ」を見ていたため、昨日の1位は🥇から外れても🥈に繰り下がるだけで、
+//  画面の上位3位に居座っていた。実測（60日）で、上位3枠の45〜57%を最頻5店が占めていた。
+//  最近上位に出た店ほど少しだけ下げ、まだ出ていない店に順番が回るようにする。
+//  ペナルティは「新しさ（直近ほど強い）」×「出た順位（上位ほど強い）」で、点数そのものは変えない。
+// ════════════════════════════════════════════════════════════
+const LFN_SHOWN_KEY  = 'lfn_shown';   // [{date, names:[上位5店]}] 最大14日
+const LFN_SHOWN_TOP  = 5;
+const LFN_SHOWN_DAYS = 14;
+const LFN_VARIETY_FLOOR = 0.70;       // 正規化スコアがこれ未満の店は多様性の入れ替え対象にしない
+const LFN_VARIETY    = 0.25;          // ペナルティの強さ（正規化スコア0〜1に対する比率。60日の模擬で最頻5店の上位3枠占有率が 45〜57% → 31〜38% になる値）
+function lfnShownHist() {
+    try { const a = JSON.parse(localStorage.getItem(LFN_SHOWN_KEY) || '[]'); return Array.isArray(a) ? a : []; }
+    catch (e) { return []; }
+}
+function lfnRecordShown(now, list) {
+    const today = lfnDateKey(now);
+    let hist = lfnShownHist();
+    if (hist.some(h => h && h.date === today)) return;       // 同日は最初の1回だけ（lfnRecordTop と同じ方針）
+    hist.unshift({ date: today, names: list.slice(0, LFN_SHOWN_TOP).map(x => x.name) });
+    try { localStorage.setItem(LFN_SHOWN_KEY, JSON.stringify(hist.slice(0, LFN_SHOWN_DAYS))); } catch (e) {}
+}
+// 店名 → ペナルティ（0以上）。今日より前の履歴だけを見る
+function lfnVarietyPenalty(now, extraShown) {
+    const pen = {};
+    const today = lfnDateKey(now);
+    const POS_W = [1.0, 0.6, 0.6, 0.3, 0.3];                  // 1位 / 2〜3位 / 4〜5位
+    // extraShown: 3日予測で「予測上の表示結果」を履歴として足すための追加分（実際の記録と同じ形式）
+    lfnShownHist().concat(extraShown || []).forEach(h => {
+        if (!h || !h.date || !Array.isArray(h.names) || h.date >= today) return;
+        const age = Math.round((new Date(today + 'T00:00:00') - new Date(h.date + 'T00:00:00')) / 86400000);
+        if (age < 1 || age > LFN_SHOWN_DAYS) return;
+        const ageW = 1 - (age - 1) / LFN_SHOWN_DAYS;           // 昨日=1.0 → 14日前=約0.07
+        h.names.forEach((n, i) => { pen[n] = (pen[n] || 0) + ageW * (POS_W[i] || 0); });
+    });
+    Object.keys(pen).forEach(n => { pen[n] = Math.min(pen[n], 1.6) * LFN_VARIETY; });
+    return pen;
+}
+
 // 日別シード（YYYYMMDD）。同じ日なら常に同じ結果になる決定論的な値。
 function lfnDaySeed(now) {
     return now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
@@ -1626,12 +1666,29 @@ const LFN_TIE_RATIO = 1.5 / 39.9;
 // [v2] 並びに対してローテーションと僅差入替を適用した配列を返す
 //   ・直近 LFN_TOP_DAYS 日の1位は先頭に来ないよう後方へ送る
 //   ・1位と2位が僅差なら日別シードで入替（同日内は常に同じ）
-//   extraRecent: 3日予測で「予測上の1位」を履歴とみなすための追加分。
+//   extraShown: 3日予測で「予測上の表示結果 [{date, names}]」を履歴とみなすための追加分。
 //   旧実装は予測側だけ②の入替を省いた別ロジックで、実測で約8%の日に予測と実際の1位が食い違っていた。
-function lfnApplyRotation(list, now, extraRecent) {
+function lfnApplyRotation(list, now, extraShown) {
     if (!list || list.length < 2) return (list || []).slice();
     let arr = list.slice();
-    const recent = lfnRecentTops(now, LFN_TOP_DAYS).concat(extraRecent || []);
+    const today = lfnDateKey(now);
+    const recent = lfnRecentTops(now, LFN_TOP_DAYS)
+        .concat((extraShown || []).filter(h => h.date < today && h.names.length).map(h => h.names[0]));
+
+    // ⓪ 最近上位に出た店を少し下げて並べ直す（点数は変えず、並びだけを調整する）
+    const pen = lfnVarietyPenalty(now, extraShown);
+    if (Object.keys(pen).length) {
+        const rawOrder = arr.map(x => x.name);
+        // 並べ替えの対象は「本来の点数が一定以上」の店だけ。点数が低い店（その時間に合わない店）まで
+        // 多様性のために押し上げてしまわないよう、足切りラインより下は元の順のまま後ろに置く。
+        arr = arr.map(x => {
+                    const n = x.norm != null ? x.norm : 0, p = pen[x.name] || 0;
+                    return { ...x, _adj: n >= LFN_VARIETY_FLOOR ? n - p : n - 10, _pen: p };
+                })
+                 .sort((a, b) => b._adj - a._adj || b.raw - a.raw);
+        // 本来の順位より下がった店には理由を表示する
+        arr.forEach((x, i) => { if (x._pen > 0.01 && i > rawOrder.indexOf(x.name)) x._yielded = true; });
+    }
 
     // ① 直近の1位は先頭に置かない（候補からは消さず2位以下へ）
     if (recent.length) {
@@ -1640,7 +1697,7 @@ function lfnApplyRotation(list, now, extraRecent) {
             const head = fresh[0];
             // 順番を譲った店に目印を付ける（🥇より点数が高い🥈が出る理由を表示するため）
             arr = [head].concat(arr.filter(x => x !== head).map(x =>
-                recent.indexOf(x.name) >= 0 && x.raw > head.raw ? { ...x, _yielded: true } : x));
+                recent.indexOf(x.name) >= 0 && (x._yielded || x.raw > head.raw) ? { ...x, _yielded: true } : x));
         }
         // 全店が直近1位なら降格しても意味がないのでそのまま
     }
@@ -1752,7 +1809,7 @@ function lfnPreview3(now) {
     const WD = ['日','月','火','水','木','金','土'];
     const rows = [];
     // 当日の1位を仮の履歴に足したうえで、翌日以降を順に見積もる
-    const virtualTops = [];
+    const virtualShown = [];
     for (let i = 1; i <= 3; i++) {
         const d = new Date(now.getTime() + i * 86400000);
         d.setHours(12, 0, 0, 0);                       // 昼どきを基準に見る
@@ -1761,9 +1818,9 @@ function lfnPreview3(now) {
         catch (e) { list = []; }
         if (!list.length) { rows.push({ d: d, name: '—' }); continue; }
         // 実際に占ったときと同じ lfnApplyRotation で選ぶ（予測内で1位になった店も履歴とみなす）
-        const pick = lfnApplyRotation(list, d, virtualTops)[0];
-        virtualTops.push(pick.name);
-        if (virtualTops.length > LFN_TOP_DAYS) virtualTops.shift();
+        const ordered = lfnApplyRotation(list, d, virtualShown);
+        const pick = ordered[0];
+        virtualShown.push({ date: lfnDateKey(d), names: ordered.slice(0, LFN_SHOWN_TOP).map(x => x.name) });
         rows.push({ d: d, name: pick.name });
     }
     return '<details style="margin-top:12px;background:#fff;border-radius:14px;padding:12px 14px;">' +
@@ -1827,7 +1884,7 @@ function lfnShopCard(shop, i, now, isOpenList) {
     const medal = i < 3 ? medals[i] : `${i+1}位`;
     const scoreColor = shop.score >= 90 ? '#FF6B6B' : shop.score >= 80 ? '#FF8C61' : shop.score >= 70 ? '#FFB347' : '#aaa';
     const yielded = shop._yielded
-        ? '<div style="font-size:0.72rem;color:#8894a6;margin:-6px 0 10px;">🔄 最近1位になったため、今日は順番を譲っています</div>' : '';
+        ? '<div style="font-size:0.72rem;color:#8894a6;margin:-6px 0 10px;">🔄 最近よく上位に出ているため、今日は少し順番を譲っています</div>' : '';
     return `
                 <div class="result-card">
                     <div class="shop-header">
@@ -1880,7 +1937,7 @@ function startFortune(opts) {
         // 旧実装は開店前（全店閉店中）でも記録していたため、朝に一度開くと閉店中の店が「今日の1位」になり、
         // 昼に占った本当の1位が記録されず、翌日以降のローテーションが誤った履歴で動いていた。
         // 気分フィルタ中の1位も「その場限りの好み」なので記録しない。
-        if (openShops.length && !_lfnMood) lfnRecordTop(now, openShops[0].name);
+        if (openShops.length && !_lfnMood) { lfnRecordTop(now, openShops[0].name); lfnRecordShown(now, openShops); }
         // 候補順を構築（スコア順 → 被り回避で降格。表示ランキングには影響させない）
         _lastOpenShops = openShops.length ? openShops.slice() : ranked.slice();
         _candList = lfnBuildCandidates(_lastOpenShops);

@@ -28,6 +28,14 @@
             --text: #2C3E50;
             --bg: #FFF8E7;
             --card: #FFFFFF;
+            --chip-muted-bg: #F2F4F8;
+            --chip-muted-fg: #8894a6;
+        }
+        /* 閉店が近い店の残り時間 */
+        .closing-chip {
+            display: inline-block; margin-left: 6px; padding: 2px 8px; border-radius: 999px;
+            font-size: 0.68rem; font-weight: 700; background: #FFF4E5; color: #B45309;
+            font-variant-numeric: tabular-nums;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -1364,6 +1372,10 @@ function getAdditionalFortuneBonusFull(now) {
   return tsBonus+kyokuBonus+numBonus;
 }
 
+// ラストオーダーの目安（閉店の何分前から「今すぐ行ける店」に出さないか）と、閉店が近い表示を出し始める分数
+const LFN_LAST_ORDER_MIN  = 30;
+const LFN_CLOSING_WARN_MIN = 60;
+
 function calculateRestaurantScores(now, mood) {
     const h = now.getHours();
     const moonPhase = getMoonPhase(now);
@@ -1384,8 +1396,14 @@ function calculateRestaurantScores(now, mood) {
     const moonAge = moonPhase.age||0;
 
     // ── 各店舗スコア計算 ──
+    const nowMin = h * 60 + now.getMinutes();
     const rawScores = restaurants.map(shop => {
-        const isOpen = h >= shop.hours.open && h < shop.hours.close;
+        // 営業時間は分単位で判定する。旧実装は「時」単位だったため、21:50 でも 22時閉店の店が
+        // 🥇「今すぐ行ける店」に出ていた。閉店 LFN_LAST_ORDER_MIN 分前を過ぎたら対象外にする。
+        const minutesLeft = shop.hours.close * 60 - nowMin;
+        const inHours = nowMin >= shop.hours.open * 60 && minutesLeft > 0;
+        const isOpen = inHours && minutesLeft > LFN_LAST_ORDER_MIN;
+        const closingSoon = inHours && !isOpen;
 
         // 1. エレメント相性 (0〜12)
         const elemPt = Math.max(0, getElementCompatibility(userData.element, shop.element) + 6);
@@ -1422,7 +1440,7 @@ function calculateRestaurantScores(now, mood) {
             dayName: dayKyuseiNow.name,
             rokuyoName: rokuyo
         };
-        return { ...shop, raw, isOpen, _bd, _moodHit: mood ? lfnMoodMatch(shop, mood) : false };
+        return { ...shop, raw, isOpen, closingSoon, minutesLeft, _bd, _moodHit: mood ? lfnMoodMatch(shop, mood) : false };
     });
 
     // ── 気分フィルタ ──
@@ -1678,7 +1696,6 @@ function lfnApplyRotation(list, now, extraShown) {
     // ⓪ 最近上位に出た店を少し下げて並べ直す（点数は変えず、並びだけを調整する）
     const pen = lfnVarietyPenalty(now, extraShown);
     if (Object.keys(pen).length) {
-        const rawOrder = arr.map(x => x.name);
         // 並べ替えの対象は「本来の点数が一定以上」の店だけ。点数が低い店（その時間に合わない店）まで
         // 多様性のために押し上げてしまわないよう、足切りラインより下は元の順のまま後ろに置く。
         arr = arr.map(x => {
@@ -1686,8 +1703,6 @@ function lfnApplyRotation(list, now, extraShown) {
                     return { ...x, _adj: n >= LFN_VARIETY_FLOOR ? n - p : n - 10, _pen: p };
                 })
                  .sort((a, b) => b._adj - a._adj || b.raw - a.raw);
-        // 本来の順位より下がった店には理由を表示する
-        arr.forEach((x, i) => { if (x._pen > 0.01 && i > rawOrder.indexOf(x.name)) x._yielded = true; });
     }
 
     // ① 直近の1位は先頭に置かない（候補からは消さず2位以下へ）
@@ -1696,8 +1711,7 @@ function lfnApplyRotation(list, now, extraShown) {
         if (fresh.length && fresh[0] !== arr[0]) {
             const head = fresh[0];
             // 順番を譲った店に目印を付ける（🥇より点数が高い🥈が出る理由を表示するため）
-            arr = [head].concat(arr.filter(x => x !== head).map(x =>
-                recent.indexOf(x.name) >= 0 && (x._yielded || x.raw > head.raw) ? { ...x, _yielded: true } : x));
+            arr = [head].concat(arr.filter(x => x !== head));
         }
         // 全店が直近1位なら降格しても意味がないのでそのまま
     }
@@ -1714,7 +1728,15 @@ function lfnApplyRotation(list, now, extraShown) {
             if (h & 1) { const t = arr[0]; arr[0] = arr[1]; arr[1] = t; }
         }
     }
-    return arr;
+
+    // 「順番を譲っています」の表示は、本来なら上位3位（表彰台）に入っていたのに
+    // 履歴の調整で下がった店だけに付ける。旧実装は下がった店すべてに付けており、上位10枚中に最大7枚出ていた。
+    const natural = list.map(x => x.name);       // list は素点の降順（本来の順位）
+    return arr.map((x, i) => {
+        const n = natural.indexOf(x.name);
+        const yielded = n < 3 && i > n && ((x._pen || 0) > 0.01 || recent.indexOf(x.name) >= 0);
+        return yielded === !!x._yielded ? x : { ...x, _yielded: yielded };
+    });
 }
 
 // ════════════════════════════════════════════════════════════
@@ -1837,11 +1859,12 @@ function lfnPreview3(now) {
 // ════════════════════════════════════════════════════════════
 function lfnOpenBadge(shop, now) {
     if (shop.isOpen) return '';
-    const h = now.getHours();
+    const nowMin = now.getHours() * 60 + now.getMinutes();
     const o = shop.hours.open, c = shop.hours.close;
-    const txt = (h < o) ? ('⏰開店前(' + o + ':00〜)') : ('⏰本日終了(' + c + ':00まで)');
+    const txt = shop.closingSoon ? ('⏰まもなく閉店（あと' + shop.minutesLeft + '分）')
+              : (nowMin < o * 60) ? ('⏰開店前(' + o + ':00〜)') : ('⏰本日終了(' + c + ':00まで)');
     return '<span style="display:inline-block;margin-left:6px;font-size:0.68rem;padding:2px 8px;' +
-        'border-radius:999px;background:#F2F4F8;color:#8894a6;font-weight:700;">' + txt + '</span>';
+        'border-radius:999px;background:var(--chip-muted-bg);color:var(--chip-muted-fg);font-weight:700;">' + txt + '</span>';
 }
 
 // ========== ランキングのカード描画 ==========
@@ -1851,11 +1874,12 @@ let _lastFortuneDay = null;      // 最後に占った日（日付が変わっ�
 
 // 開店前・閉店後に占ったときの案内
 function lfnClosedNote(now) {
-    const h = now.getHours();
+    const nowMin = now.getHours() * 60 + now.getMinutes();
     const firstOpen = Math.min.apply(null, restaurants.map(r => r.hours.open));
     const lastClose = Math.max.apply(null, restaurants.map(r => r.hours.close));
-    if (h < firstOpen) return '⏰ まだ開店前です（' + firstOpen + ':00〜）。開店後に占うと「今すぐ行ける店」が出ます';
-    if (h >= lastClose) return '🌙 本日の営業は終了しました（〜' + lastClose + ':00）';
+    if (nowMin < firstOpen * 60) return '⏰ まだ開店前です（' + firstOpen + ':00〜）。開店後に占うと「今すぐ行ける店」が出ます';
+    if (nowMin >= lastClose * 60) return '🌙 本日の営業は終了しました（〜' + lastClose + ':00）';
+    if (nowMin >= lastClose * 60 - LFN_LAST_ORDER_MIN) return '⏰ まもなく全店が閉店します（〜' + lastClose + ':00）。ラストオーダーにご注意ください';
     return '';
 }
 
@@ -1892,7 +1916,7 @@ function lfnShopCard(shop, i, now, isOpenList) {
                         <div class="shop-icon">${shop.emoji}</div>
                         <div class="shop-info">
                             ${nameBtn}
-                            <div class="shop-location">${shop.floor} ${shop.area} ／ ${shop.genre} ／ 営業:${shop.hours.open}:00〜${shop.hours.close}:00</div>
+                            <div class="shop-location">${shop.floor} ${shop.area} ／ ${shop.genre} ／ 営業:${shop.hours.open}:00〜${shop.hours.close}:00${shop.minutesLeft <= LFN_CLOSING_WARN_MIN ? '<span class="closing-chip">⏰ あと' + shop.minutesLeft + '分で閉店</span>' : ''}</div>
                         </div>
                     </div>
                     <div class="score-badge" style="background:${scoreColor};">運気スコア：${shop.score.toFixed(1)}点${shop._moodHit?' <span style="font-size:0.72rem;">(気分マッチ)</span>':''}</div>

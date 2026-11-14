@@ -1,5 +1,5 @@
 // Lucky Food Navigator Service Worker
-const CACHE = 'lfn-v3';
+const CACHE = 'lfn-v4';
 const SHELL = [
   './', './index.html', './manifest.json',
   './icon-192.png', './icon-512.png', './icon-512-maskable.png', './apple-touch-icon.png',

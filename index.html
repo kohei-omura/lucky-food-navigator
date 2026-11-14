@@ -11,7 +11,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700;900&family=M+PLUS+Rounded+1c:wght@400;700;900&display=swap" rel="stylesheet" crossorigin>
     <!-- PWA -->
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#FF6B6B">
+    <meta name="theme-color" content="#FF6B6B" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#1C1714" media="(prefers-color-scheme: dark)">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -20,27 +21,133 @@
     <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
     <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
     <style>
+        /* ── 色・形のトークン（ライト）。文字色はすべて背景に対してコントラスト 4.5:1 以上 ──
+           旧配色は補助文字 #999 が 2.85:1、強調文字 #FF6B6B が 2.78:1、スコアの白文字が 1.78〜2.78:1 で、
+           屋外やモール内の明るい場所では読みにくかった。ブランドの珊瑚色は面・グラデーションに残し、
+           文字に使う色だけを同系色の濃い側（--accent-ink）に寄せている。 */
         :root {
+            color-scheme: light dark;
             --primary: #FF6B6B;
             --secondary: #FFD93D;
             --accent: #6BCF7F;
             --deep: #2C3E50;
             --text: #2C3E50;
             --bg: #FFF8E7;
+            --bg-grad-a: #FFF8E7;
+            --bg-grad-b: #FFE5B4;
             --card: #FFFFFF;
-            --chip-muted-bg: #F2F4F8;
-            --chip-muted-fg: #8894a6;
+            --surface: #FFFFFF;          /* カード・ボタンの面 */
+            --surface-2: #FFF7EC;        /* カード内の区画（白の上の白で見えなかった所） */
+            --surface-3: #F5F2EE;        /* 控えめな面（営業時間外の見出しなど） */
+            --line: #F0E6DA;
+            --muted: #6B6F76;            /* 補助文字 5.05:1 */
+            --muted-strong: #555B63;
+            --accent-ink: #C73844;       /* 強調文字 白で5.2:1・淡い区画でも4.8:1以上 */
+            --accent-soft: #FFF0F0;
+            --reason-bg: #FFF8E7;
+            --reason-fg: #4A4F57;
+            --chip-muted-bg: #EEF1F6;
+            --chip-muted-fg: #5F6B7D;    /* 4.77:1 */
+            --closing-bg: #FFF4E5;
+            --closing-fg: #9A4A00;
+            --score-1: #D2404B;          /* 白文字 4.59:1 */
+            --score-2: #C8541F;          /* 4.43:1（大きい太字なので基準3:1を満たす） */
+            --score-3: #A86400;          /* 4.68:1 */
+            --score-4: #7A808A;          /* 3.98:1 */
+            --btn-muted-bg: #ECE7E1;
+            --btn-muted-fg: #4A4F57;
+            --shadow: 0 8px 24px rgba(60, 30, 10, 0.10);
+            --shadow-lg: 0 12px 32px rgba(60, 30, 10, 0.16);
+            --shadow-sm: 0 2px 6px rgba(60, 30, 10, 0.08);
+            --radius: 20px;
+            --radius-sm: 12px;
+            --focus: #FF8C61;
+        }
+        /* ── ダーク（端末の設定に合わせる）。暖かみのある焦げ茶系で、元の世界観を保つ ── */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --text: #F3ECE6;
+                --bg: #1C1714;
+                --bg-grad-a: #1C1714;
+                --bg-grad-b: #2A1F18;
+                --card: #2A2420;
+                --surface: #2A2420;
+                --surface-2: #332B26;
+                --surface-3: #2F2925;
+                --line: #3D342E;
+                --muted: #B9AEA5;          /* 7.04:1 */
+                --muted-strong: #D3C9C1;
+                --accent-ink: #FF8E8E;     /* 6.93:1 */
+                --accent-soft: #3A2626;
+                --reason-bg: #332B26;
+                --reason-fg: #E4DCD5;
+                --chip-muted-bg: #3A3430;
+                --chip-muted-fg: #CFC6BE;
+                --closing-bg: #3B2A17;
+                --closing-fg: #FFC27A;
+                --btn-muted-bg: #3A3430;
+                --btn-muted-fg: #E4DCD5;
+                --shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+                --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.45);
+                --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.30);
+            }
+        }
+        /* ── 画面部品（旧実装はJS内のインライン style に色を直書きしていた） ── */
+        .fortune-pill {
+            background: linear-gradient(135deg, #FF8C61, #FFB347);
+            color: #4A1E0A;               /* 6.19:1（旧: 白文字で 1.8〜2.3:1） */
+            border-radius: 20px; padding: 4px 12px; font-size: 0.8rem; font-weight: 700;
+            font-variant-numeric: tabular-nums;
+        }
+        .pill-btn {
+            border: none; border-radius: 999px; padding: 9px 16px; min-height: 40px;
+            background: var(--surface-2); color: var(--accent-ink);
+            font: inherit; font-weight: 900; font-size: 0.85rem; cursor: pointer;
+            box-shadow: var(--shadow-sm); transition: transform 0.15s ease, filter 0.15s ease;
+        }
+        .pill-btn:active, .mood-chip:active { transform: scale(0.96); }
+        @media (hover: hover) { .pill-btn:hover { filter: brightness(0.97); } }
+        .mood-row { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin: 10px 0 4px; }
+        .mood-chip {
+            border: 1px solid var(--line); border-radius: 999px; padding: 7px 13px; min-height: 36px;
+            background: var(--surface); color: var(--muted);
+            font: inherit; font-weight: 900; font-size: 0.8rem; cursor: pointer;
+            transition: transform 0.15s ease, background 0.15s ease;
+        }
+        .mood-chip.on { border: 2px solid var(--accent-ink); background: var(--accent-soft); color: var(--accent-ink); }
+        .panel { background: var(--surface); border-radius: 14px; padding: 12px 14px; box-shadow: var(--shadow-sm); }
+        .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        .data-cell { background: var(--surface-2); border-radius: var(--radius-sm); padding: 12px 10px; text-align: center; min-width: 0; }
+        .data-cell.wide { grid-column: 1 / -1; }
+        .data-label { font-size: 0.72rem; color: var(--muted); line-height: 1.4; }
+        .data-value { font-size: 1.1rem; font-weight: 900; color: var(--accent-ink); margin-top: 2px; word-break: keep-all; overflow-wrap: anywhere; }
+        .data-value.small { font-size: 0.92rem; }
+        .fold-summary {
+            cursor: pointer; background: var(--surface); border-radius: var(--radius-sm); padding: 11px 16px;
+            font-size: 0.85rem; color: var(--accent-ink); font-weight: 700; text-align: center;
+            box-shadow: var(--shadow-sm); list-style-position: inside;
+        }
+        .fold-summary.muted { background: var(--surface-3); color: var(--muted); font-weight: 400; text-align: left; box-shadow: none; }
+        /* スマホ幅: メダル・絵文字を一回り小さくし、店名が語の途中で折れないようにする
+           （375pxで「いきなりステ／ーキ」と折り返していた） */
+        .shop-name-link { word-break: auto-phrase; line-height: 1.35; }
+        @media (max-width: 420px) {
+            .rank { font-size: 1.6rem; margin-right: 6px; }
+            .shop-icon { font-size: 2rem; margin-right: 10px; }
+            .shop-name-link { font-size: 1.12rem; }
+            .result-card { padding: 20px 18px; }
         }
         /* 閉店が近い店の残り時間 */
         .closing-chip {
             display: inline-block; margin-left: 6px; padding: 2px 8px; border-radius: 999px;
-            font-size: 0.68rem; font-weight: 700; background: #FFF4E5; color: #B45309;
+            font-size: 0.68rem; font-weight: 700; background: var(--closing-bg); color: var(--closing-fg);
             font-variant-numeric: tabular-nums;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { background: var(--bg-grad-b); }   /* オーバースクロール時に白い地が見えないように */
         body {
             font-family: 'M PLUS Rounded 1c', sans-serif;
-            background: linear-gradient(135deg, #FFF8E7 0%, #FFE5B4 100%);
+            background: linear-gradient(135deg, var(--bg-grad-a) 0%, var(--bg-grad-b) 100%);
             color: var(--text);
             min-height: 100vh;
             padding: 20px;
@@ -112,20 +219,21 @@
             color: var(--primary);
             margin-bottom: 5px;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            color: var(--accent-ink);
         }
         
         .subtitle {
             font-size: 0.9rem;
-            color: #666;
+            color: var(--muted-strong);
             font-weight: 700;
         }
         
         .time-display {
-            background: var(--card);
+            background: var(--surface);
             border-radius: 20px;
             padding: 20px;
             margin-bottom: 20px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+            box-shadow: var(--shadow);
             text-align: center;
             animation: fadeIn 0.8s ease-out;
         }
@@ -136,7 +244,7 @@
         
         .time-label {
             font-size: 0.75rem;
-            color: #999;
+            color: var(--muted);
             margin-bottom: 5px;
             letter-spacing: 0.1em;
         }
@@ -144,8 +252,9 @@
         .time-value {
             font-size: 1.8rem;
             font-weight: 900;
-            color: var(--primary);
+            color: var(--accent-ink);
             font-family: 'Zen Maru Gothic', sans-serif;
+            font-variant-numeric: tabular-nums;
         }
         
         .fortune-btn {
@@ -162,6 +271,8 @@
             box-shadow: 0 10px 30px rgba(255,107,107,0.4);
             transition: all 0.3s ease;
             margin-bottom: 20px;
+            /* 黄色側でも白文字が沈まないよう、輪郭に薄い影を付ける */
+            text-shadow: 0 1px 2px rgba(120, 40, 0, 0.35), 0 0 1px rgba(120, 40, 0, 0.45);
             position: relative;
             overflow: hidden;
         }
@@ -179,9 +290,12 @@
             transition: width 0.6s, height 0.6s;
         }
         
-        .fortune-btn:hover::before {
-            width: 300px;
-            height: 300px;
+        /* タッチ端末ではタップ後に :hover が残り、白い円が出たままになるのでマウス環境だけにする */
+        @media (hover: hover) {
+            .fortune-btn:hover::before {
+                width: 300px;
+                height: 300px;
+            }
         }
         
         .fortune-btn:active {
@@ -208,7 +322,7 @@
         .loading-text {
             margin-top: 15px;
             font-size: 1rem;
-            color: #666;
+            color: var(--muted-strong);
             animation: pulse 1.5s infinite;
         }
         @keyframes pulse {
@@ -229,19 +343,21 @@
         }
         
         .result-card {
-            background: var(--card);
+            background: var(--surface);
             border-radius: 20px;
             padding: 25px;
             margin-bottom: 15px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+            box-shadow: var(--shadow);
             border-left: 5px solid var(--primary);
             transition: all 0.3s ease;
             animation: slideIn 0.6s ease-out;
             animation-fill-mode: both;
         }
-        .result-card:nth-child(1) { animation-delay: 0.1s; border-left-color: #FFD700; }
-        .result-card:nth-child(2) { animation-delay: 0.2s; border-left-color: #C0C0C0; }
-        .result-card:nth-child(3) { animation-delay: 0.3s; border-left-color: #CD7F32; }
+        /* 旧実装は :nth-child(1〜3) で指定していたが、カードの前にサマリー等の要素があるため
+           一度も当たらず、金・銀・銅の色もアニメーションの時間差も効いていなかった */
+        .result-card.rank-1 { animation-delay: 0.1s; border-left-color: #E6B800; }
+        .result-card.rank-2 { animation-delay: 0.2s; border-left-color: #A9B0B8; }
+        .result-card.rank-3 { animation-delay: 0.3s; border-left-color: #CD7F32; }
         
         @keyframes slideIn {
             from { opacity: 0; transform: translateX(-30px); }
@@ -289,7 +405,8 @@
         
         .shop-location {
             font-size: 0.8rem;
-            color: #999;
+            color: var(--muted);
+            line-height: 1.6;
         }
         
         .score-badge {
@@ -301,16 +418,17 @@
             font-size: 1.1rem;
             display: inline-block;
             margin-bottom: 12px;
-            box-shadow: 0 4px 12px rgba(110,207,127,0.3);
+            box-shadow: var(--shadow-sm);
+            font-variant-numeric: tabular-nums;
         }
         
         .reason {
-            background: #FFF8E7;
+            background: var(--reason-bg);
             padding: 15px;
-            border-radius: 12px;
+            border-radius: var(--radius-sm);
             font-size: 0.9rem;
-            line-height: 1.7;
-            color: #555;
+            line-height: 1.75;
+            color: var(--reason-fg);
             margin-bottom: 12px;
         }
         
@@ -322,7 +440,7 @@
         
         .tag {
             background: var(--secondary);
-            color: var(--text);
+            color: #2C3E50;                 /* 黄色の上は明暗どちらのテーマでも濃紺（7.97:1） */
             padding: 6px 12px;
             border-radius: 15px;
             font-size: 0.75rem;
@@ -330,17 +448,17 @@
         }
         
         .summary {
-            background: var(--card);
+            background: var(--surface);
             border-radius: 20px;
             padding: 20px;
             margin-top: 20px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+            box-shadow: var(--shadow);
             text-align: center;
         }
         
         .summary-title {
             font-size: 0.85rem;
-            color: #999;
+            color: var(--muted);
             margin-bottom: 10px;
             letter-spacing: 0.1em;
         }
@@ -348,24 +466,24 @@
         .summary-text {
             font-size: 1rem;
             line-height: 1.8;
-            color: #555;
+            color: var(--reason-fg);
         }
         
         footer {
             text-align: center;
             margin-top: 40px;
             padding: 20px;
-            color: #999;
+            color: var(--muted);
             font-size: 0.8rem;
         }
         
         .back-btn {
             width: 100%;
             padding: 15px;
-            background: #E0E0E0;
+            background: var(--btn-muted-bg);
             border: none;
             border-radius: 15px;
-            color: #666;
+            color: var(--btn-muted-fg);
             font-size: 1rem;
             font-weight: 700;
             cursor: pointer;
@@ -373,9 +491,8 @@
             transition: all 0.3s ease;
         }
         
-        .back-btn:hover {
-            background: #D0D0D0;
-        }
+        @media (hover: hover) { .back-btn:hover { filter: brightness(0.95); } }
+        .back-btn:active { transform: scale(0.98); }
     
         /* ── フロアマップモーダル ── */
         .map-modal {
@@ -390,7 +507,7 @@
         }
         .map-modal.show { display: flex; }
         .map-box {
-            background: #fff;
+            background: var(--surface);
             border-radius: 18px;
             width: 100%;
             max-width: 520px;
@@ -421,7 +538,7 @@
         }
         .map-floor-tabs {
             display: flex;
-            background: #f5f5f5;
+            background: var(--surface-3);
         }
         .map-floor-tab {
             flex: 1;
@@ -432,12 +549,12 @@
             cursor: pointer;
             border: none;
             background: transparent;
-            color: #999;
+            color: var(--muted);
             transition: all 0.2s;
         }
         .map-floor-tab.active {
-            background: #fff;
-            color: #FF8C61;
+            background: var(--surface);
+            color: var(--accent-ink);
             border-bottom: 3px solid #FF8C61;
         }
         .map-wrap {
@@ -486,9 +603,9 @@
         .map-footer {
             padding: 10px 16px;
             font-size: 0.75rem;
-            color: #999;
+            color: var(--muted);
             text-align: center;
-            border-top: 1px solid #eee;
+            border-top: 1px solid var(--line);
         }
         /* 店舗名クリック可能スタイル */
         .shop-name-link {
@@ -506,7 +623,11 @@
             color: var(--text);
             text-align: left;
         }
-        .shop-name-link:focus-visible { outline: 3px solid #FF8C61; outline-offset: 2px; border-radius: 6px; }
+        .shop-name-link:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; border-radius: 6px; }
+        /* キーボード操作時のフォーカスを全ボタンで見えるように */
+        button:focus-visible, summary:focus-visible, input:focus-visible {
+            outline: 3px solid var(--focus); outline-offset: 2px;
+        }
         .shop-name-link:hover { text-decoration: underline; }
         .map-pin-icon { font-size: 0.85em; }
 
@@ -1008,8 +1129,8 @@ function mapImgError(img) {
   img.dataset.errShown = '1';
   img.style.display = 'none';
   const box = document.createElement('div');
-  box.style.cssText = 'padding:28px 16px;text-align:center;color:#999;font-size:0.85rem;'
-                    + 'background:#f5f5f5;border-radius:12px;line-height:1.7;';
+  box.style.cssText = 'padding:28px 16px;text-align:center;color:var(--muted);font-size:0.85rem;'
+                    + 'background:var(--surface-3);border-radius:12px;line-height:1.7;';
   const file = (img.getAttribute('src') || '').replace('./', '');
   box.textContent = 'マップ画像が見つかりません（' + file + ' をリポジトリにアップしてください）';
   box.id = img.id + 'Err';
@@ -1568,7 +1689,7 @@ function updateTime() {
         if (pillsEl.dataset.sig !== sig) {
             pillsEl.dataset.sig = sig;
             pillsEl.innerHTML = pills.map(p =>
-                `<span style="background:linear-gradient(135deg,#FF8C61,#FFB347);color:#fff;border-radius:20px;padding:4px 12px;font-size:0.8rem;font-weight:700;">${p.label}</span>`
+                `<span class="fortune-pill">${p.label}</span>`
             ).join('');
         }
     }
@@ -1773,13 +1894,11 @@ function lfnSetMood(key) {
     startFortune({ instant: true });
 }
 function lfnMoodChips() {
-    return '<div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:10px 0 4px;">' +
+    return '<div class="mood-row" role="group" aria-label="今の気分">' +
         Object.keys(LFN_MOOD).map(k => {
             const on = (_lfnMood === k);
-            return '<button type="button" onclick="lfnSetMood(\'' + k + '\')" style="border:' +
-                (on ? '2px solid #FF6B6B' : '1px solid #eee') + ';border-radius:999px;padding:7px 13px;' +
-                'background:' + (on ? '#FFF0F0' : '#fff') + ';color:' + (on ? '#FF6B6B' : '#888') +
-                ';font-weight:900;font-size:0.8rem;cursor:pointer;">' + LFN_MOOD[k].label + '</button>';
+            return '<button type="button" class="mood-chip' + (on ? ' on' : '') + '" aria-pressed="' + on + '"' +
+                ' onclick="lfnSetMood(\'' + k + '\')">' + LFN_MOOD[k].label + '</button>';
         }).join('') + '</div>';
 }
 
@@ -1814,12 +1933,12 @@ function lfnReasonChips(shop, now) {
      .sort((a, c) => Math.abs(c.v) - Math.abs(a.v))
      .slice(0, 5);
     if (!items.length) return '';
-    return '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:8px;">' +
+    return '<div style="display:flex;gap:5px;flex-wrap:wrap;margin:8px 0 10px;">' +
         items.map(x => {
             const up = x.v >= 0;
             const val = (up ? '+' : '') + (Math.round(x.v * 10) / 10);
             return '<span style="font-size:0.68rem;padding:3px 8px;border-radius:999px;' +
-                'background:' + (up ? '#FFF3F3' : '#F2F4F8') + ';color:' + (up ? '#FF6B6B' : '#8894a6') +
+                'background:' + (up ? 'var(--accent-soft)' : 'var(--chip-muted-bg)') + ';color:' + (up ? 'var(--accent-ink)' : 'var(--chip-muted-fg)') + ';font-variant-numeric:tabular-nums' +
                 ';font-weight:700;">' + x.k + ' ' + val + '</span>';
         }).join('') + '</div>';
 }
@@ -1845,13 +1964,13 @@ function lfnPreview3(now) {
         virtualShown.push({ date: lfnDateKey(d), names: ordered.slice(0, LFN_SHOWN_TOP).map(x => x.name) });
         rows.push({ d: d, name: pick.name });
     }
-    return '<details style="margin-top:12px;background:#fff;border-radius:14px;padding:12px 14px;">' +
-        '<summary style="cursor:pointer;font-weight:900;color:#FF6B6B;font-size:0.9rem;">📅 向こう3日の1位予測</summary>' +
+    return '<details class="panel" style="margin-top:12px;">' +
+        '<summary style="cursor:pointer;font-weight:900;color:var(--accent-ink);font-size:0.9rem;">📅 向こう3日の1位予測</summary>' +
         '<div style="margin-top:10px;display:flex;flex-direction:column;gap:7px;">' +
         rows.map(r => '<div style="display:flex;gap:10px;font-size:0.85rem;">' +
-            '<span style="color:#999;min-width:5.2em;">' + (r.d.getMonth() + 1) + '/' + r.d.getDate() +
+            '<span style="color:var(--muted);min-width:5.2em;font-variant-numeric:tabular-nums;">' + (r.d.getMonth() + 1) + '/' + r.d.getDate() +
             '(' + WD[r.d.getDay()] + ')</span><span style="font-weight:700;">' + r.name + '</span></div>').join('') +
-        '</div><div style="margin-top:8px;font-size:0.7rem;color:#bbb;">※ 当日の運勢で変わることがあります</div></details>';
+        '</div><div style="margin-top:8px;font-size:0.7rem;color:var(--muted);">※ 当日の運勢で変わることがあります</div></details>';
 }
 
 // ════════════════════════════════════════════════════════════
@@ -1889,11 +2008,11 @@ function lfnShopCard(shop, i, now, isOpenList) {
     // 店名は <button> にして、キーボード（Tab→Enter）でもマップを開けるようにする
     const nameBtn = `<button type="button" class="shop-name shop-name-link" onclick="openMap(this.dataset.name)" data-name="${shop.name}" aria-label="${shop.name}のフロアマップを開く"><span class="map-pin-icon">📍</span>${shop.name}</button>`;
     if (!isOpenList) {
-        const scoreColor = shop.score >= 80 ? '#aaa' : shop.score >= 70 ? '#bbb' : '#ccc';
+        const scoreColor = 'var(--score-4)';
         return `
                 <div class="result-card" style="opacity:0.7;">
                     <div class="shop-header">
-                        <div class="rank" style="font-size:0.75rem;color:#999;">営業外</div>
+                        <div class="rank" style="font-size:0.75rem;color:var(--muted);">営業外</div>
                         <div class="shop-icon">${shop.emoji}</div>
                         <div class="shop-info">
                             ${nameBtn}
@@ -1906,11 +2025,11 @@ function lfnShopCard(shop, i, now, isOpenList) {
     }
     const medals = ['🥇','🥈','🥉'];
     const medal = i < 3 ? medals[i] : `${i+1}位`;
-    const scoreColor = shop.score >= 90 ? '#FF6B6B' : shop.score >= 80 ? '#FF8C61' : shop.score >= 70 ? '#FFB347' : '#aaa';
+    const scoreColor = shop.score >= 90 ? 'var(--score-1)' : shop.score >= 80 ? 'var(--score-2)' : shop.score >= 70 ? 'var(--score-3)' : 'var(--score-4)';
     const yielded = shop._yielded
-        ? '<div style="font-size:0.72rem;color:#8894a6;margin:-6px 0 10px;">🔄 最近よく上位に出ているため、今日は少し順番を譲っています</div>' : '';
+        ? '<div style="font-size:0.72rem;color:var(--muted);margin:-6px 0 10px;">🔄 最近よく上位に出ているため、今日は少し順番を譲っています</div>' : '';
     return `
-                <div class="result-card">
+                <div class="result-card${i < 3 ? ' rank-' + (i + 1) : ''}">
                     <div class="shop-header">
                         <div class="rank">${medal}</div>
                         <div class="shop-icon">${shop.emoji}</div>
@@ -1974,15 +2093,15 @@ function startFortune(opts) {
                 ${rokuyo}の${moonPhase.emoji||'🌙'}${moonPhase.phase}（旧暦${lunar.leap?'閏':''}${lunar.month}月${lunar.day}日・月齢${moonPhase.age}日）。<br>
                 ${userData.zodiac}・B型・酉年の晃平さんは今日、<br>
                 <strong id="featuredShop" style="font-size:1.1em;">${top1.name}</strong><br><span id="featuredNote">との運気相性が最高です！</span>
-                ${openShops.length ? '' : '<div style="margin-top:6px;font-size:0.8rem;color:#999;">' + lfnClosedNote(now) + '</div>'}
+                ${openShops.length ? '' : '<div style="margin-top:6px;font-size:0.8rem;color:var(--muted);">' + lfnClosedNote(now) + '</div>'}
             </div>
             <div style="display:flex;gap:8px;justify-content:center;margin-top:12px;flex-wrap:wrap;">
-                <button type="button" onclick="lfnCycleCandidate()" style="border:none;border-radius:999px;padding:9px 16px;background:#fff;color:#FF6B6B;font-weight:900;font-size:0.85rem;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.08);">🎲 別の候補</button>
-                <button type="button" onclick="lfnShare(this)" style="border:none;border-radius:999px;padding:9px 16px;background:#fff;color:#FF6B6B;font-weight:900;font-size:0.85rem;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.08);">📤 共有</button>
+                <button type="button" class="pill-btn" onclick="lfnCycleCandidate()">🎲 別の候補</button>
+                <button type="button" class="pill-btn" onclick="lfnShare(this)">📤 共有</button>
             </div>
             ${lfnMoodChips()}
-            <div id="candNav" style="text-align:center;margin-top:8px;font-size:0.75rem;color:#999;"></div>
-            <label style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:8px;font-size:0.75rem;color:#999;cursor:pointer;">
+            <div id="candNav" style="text-align:center;margin-top:8px;font-size:0.75rem;color:var(--muted);font-variant-numeric:tabular-nums;"></div>
+            <label style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:8px;font-size:0.75rem;color:var(--muted);cursor:pointer;">
                 <input type="checkbox" onchange="lfnToggleAvoid(this)" ${lfnAvoidOn()?'checked':''}>被り回避（直近${LFN_AVOID_DAYS}日と同じ店を後ろへ回す）
             </label>
         </div>`;
@@ -1992,23 +2111,13 @@ function startFortune(opts) {
         html += `
         <div class="summary" style="margin-top:12px;">
             <div class="summary-title">🔮 本日の占術データ</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;">
-                <div style="background:#fff;border-radius:12px;padding:12px;text-align:center;">
-                    <div style="font-size:0.75rem;color:#999;">六曜</div>
-                    <div style="font-size:1.1rem;font-weight:900;color:#FF6B6B;">${rokuyo}</div>
-                </div>
-                <div style="background:#fff;border-radius:12px;padding:12px;text-align:center;">
-                    <div style="font-size:0.75rem;color:#999;">月相</div>
-                    <div style="font-size:1.1rem;font-weight:900;color:#FF6B6B;">${moonPhase.emoji||'🌙'} ${moonPhase.phase}</div>
-                </div>
-                <div style="background:#fff;border-radius:12px;padding:12px;text-align:center;">
-                    <div style="font-size:0.75rem;color:#999;">本日の日干（四柱推命）</div>
-                    <div style="font-size:1.1rem;font-weight:900;color:#FF6B6B;">${dayKan}日</div>
-                </div>
-                <div style="background:#fff;border-radius:12px;padding:12px;text-align:center;">
-                    <div style="font-size:0.75rem;color:#999;">九星（本命×月盤×日盤）</div>
-                    <div style="font-size:0.85rem;font-weight:900;color:#FF6B6B;">${(function(){const k=getKyuseiDayScore(now);const r=k.total>=6?'大吉✨':k.total>=0?'吉':k.total>=-3?'注意':'凶⚠';return '七赤金星<br>月盤:'+k.monthBoard.slice(0,2)+' 日盤:'+k.dayBoard.slice(0,2)+'→'+r;})()}</div>
-                </div>
+            <div class="data-grid">
+                <div class="data-cell"><div class="data-label">六曜</div><div class="data-value">${rokuyo}</div></div>
+                <div class="data-cell"><div class="data-label">月相</div><div class="data-value">${moonPhase.emoji||'🌙'} ${moonPhase.phase}</div></div>
+                <div class="data-cell"><div class="data-label">本日の日干（四柱推命）</div><div class="data-value">${dayKan}日</div></div>
+                <div class="data-cell"><div class="data-label">本命星</div><div class="data-value">七赤金星</div></div>
+                ${(function(){const k=getKyuseiDayScore(now);const r=k.total>=6?'大吉✨':k.total>=0?'吉':k.total>=-3?'注意':'凶⚠';
+                  return '<div class="data-cell wide"><div class="data-label">九星（本命×月盤×日盤）</div><div class="data-value small">月盤 '+k.monthBoard+' ・ 日盤 '+k.dayBoard+'<br>→ '+r+'</div></div>';})()}
             </div>
         </div>`;
         
@@ -2021,7 +2130,7 @@ function startFortune(opts) {
             const rest = openShops.slice(LFN_TOP_VISIBLE);
             if (rest.length) {
                 html += `<details class="more-rank" style="margin-top:4px;">
-                    <summary style="cursor:pointer;background:#fff;border-radius:12px;padding:10px 16px;font-size:0.85rem;color:#FF6B6B;font-weight:700;text-align:center;">
+                    <summary class="fold-summary">
                         ${LFN_TOP_VISIBLE + 1}位〜${openShops.length}位を見る（${rest.length}店）
                     </summary>`;
                 rest.forEach((shop, j) => { html += lfnShopCard(shop, LFN_TOP_VISIBLE + j, now, true); });
@@ -2033,7 +2142,7 @@ function startFortune(opts) {
         if (closedShops.length > 0) {
             html += `
             <details style="margin-top:12px;">
-                <summary style="cursor:pointer;background:#f5f5f5;border-radius:12px;padding:10px 16px;font-size:0.85rem;color:#999;">
+                <summary class="fold-summary muted">
                     ⏰ 現在営業時間外の店舗（${closedShops.length}店）
                 </summary>`;
             closedShops.forEach((shop, i) => { html += lfnShopCard(shop, i, now, false); });
